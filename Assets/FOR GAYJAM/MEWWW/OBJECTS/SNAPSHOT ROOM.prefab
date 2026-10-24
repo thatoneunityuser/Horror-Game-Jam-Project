@@ -1807,6 +1807,7 @@ MonoBehaviour:
   forceSolidOnSpawn: 1
   makeTriggerOnOpen: 1
   disableColliderOnOpen: 1
+  maxVerticalDistance: 2.5
   cleanPreviousRoomsOnOpen: 0
 --- !u!1 &5361855984996765765
 GameObject:

@@ -289,6 +289,8 @@ MonoBehaviour:
   minRooms: 2
   maxRooms: 3
   CountDown: 0
+  preventBlindedEntityOnStairRoom: 1
+  delaySpawnIfBlockedByStair: 0
 --- !u!1 &1061123869143918228
 GameObject:
   m_ObjectHideFlags: 0
@@ -1427,6 +1429,7 @@ MonoBehaviour:
   forceSolidOnSpawn: 1
   makeTriggerOnOpen: 1
   disableColliderOnOpen: 1
+  maxVerticalDistance: 2.5
   cleanPreviousRoomsOnOpen: 0
 --- !u!1 &5361855984996765765
 GameObject:
