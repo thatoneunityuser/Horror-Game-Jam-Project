@@ -285,7 +285,7 @@ MonoBehaviour:
   - {fileID: 8970193399305901053, guid: 37c5f616676187a40be7fac432e33e92, type: 3}
   spawnPoint: {fileID: 6704015512914382651}
   Spawnable: 0
-  spawnChancePercentage: 67
+  spawnChancePercentage: 33
   minRooms: 2
   maxRooms: 3
   CountDown: 0

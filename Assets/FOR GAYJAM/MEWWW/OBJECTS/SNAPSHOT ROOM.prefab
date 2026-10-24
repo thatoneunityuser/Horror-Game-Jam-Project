@@ -302,8 +302,8 @@ MonoBehaviour:
   spawnPoint: {fileID: 6704015512914382651}
   Spawnable: 0
   spawnChancePercentage: 33
-  minRooms: 4
-  maxRooms: 5
+  minRooms: 2
+  maxRooms: 3
   CountDown: 0
   preventBlindedEntityOnStairRoom: 1
   delaySpawnIfBlockedByStair: 0

@@ -57,18 +57,38 @@ public class SideScrollMovement : MonoBehaviour
     private float originalGravity = 1f;
     private Coroutine dashCoroutine;
 
+    // Input cached in Update, consumed in FixedUpdate
+    private float moveInput = 0f;
+    private bool isFlyingInput = false;
+
+    [Header("Anti-Snag")]
+    [Tooltip("Auto-recover when the collider catches on seams between ground colliders (tilemap / stacked boxes)")]
+    public bool antiSnag = true;
+    [Tooltip("Tiny upward nudge applied when snagged on a seam")]
+    public float snagNudge = 0.03f;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         if (rb != null)
         {
             rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+            rb.sleepMode = RigidbodySleepMode2D.NeverSleep;
             originalGravity = rb.gravityScale;
         }
 
         if (PlayerCollider == null)
         {
             PlayerCollider = GetComponent<Collider2D>();
+        }
+
+        // Zero friction so the player never sticks to ground/walls (only if no material assigned)
+        if (PlayerCollider != null && PlayerCollider.sharedMaterial == null)
+        {
+            PhysicsMaterial2D noFriction = new PhysicsMaterial2D("PlayerNoFriction");
+            noFriction.friction = 0f;
+            noFriction.bounciness = 0f;
+            PlayerCollider.sharedMaterial = noFriction;
         }
 
         audioSource = GetComponent<AudioSource>();
@@ -109,7 +129,7 @@ public class SideScrollMovement : MonoBehaviour
         }
 
         // ── Input ─────────────────────────────────────────────────────────────
-        float moveInput = Input.GetAxisRaw("Horizontal"); // -1, 0, or 1
+        moveInput = Input.GetAxisRaw("Horizontal"); // -1, 0, or 1
 
         // ── Sprint ────────────────────────────────────────────────────────────
         bool isSprinting = Input.GetKey(KeyCode.LeftShift) && moveInput != 0f && stamina > 0f;
@@ -137,7 +157,6 @@ public class SideScrollMovement : MonoBehaviour
             currentSpeedX = Mathf.MoveTowards(currentSpeedX, 0f, deceleration * Time.deltaTime);
         }
 
-        rb.velocity = new Vector2(currentSpeedX, rb.velocity.y);
         isMoving = (moveInput != 0f) || Mathf.Abs(currentSpeedX) > 0.05f || Mathf.Abs(rb.velocity.y) > 0.1f;
 
         // ── Flip sprite ───────────────────────────────────────────────────────
@@ -146,19 +165,14 @@ public class SideScrollMovement : MonoBehaviour
         else if (moveInput < 0)
             transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
 
-        // ── Smooth Stairs Navigation (Velocity-Proportional Up & Down) ────────
-        if (canWalkUpStair)
-        {
-            HandleStairs(moveInput);
-        }
-
         // ── Fly / Drop ────────────────────────────────────────────────────────
+        isFlyingInput = false;
         if (flyable)
         {
             bool isFlying = (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.Space)) && flyMeter > 0;
+            isFlyingInput = isFlying;
             if (isFlying)
             {
-                rb.AddForce(Vector2.up * flyforce, ForceMode2D.Force);
                 flyMeter -= flyMeterDrainRate * Time.deltaTime;
             }
             else
@@ -181,6 +195,49 @@ public class SideScrollMovement : MonoBehaviour
                 dashCoroutine = StartCoroutine(DashRoutine(moveInput));
             }
         }
+    }
+
+    void FixedUpdate()
+    {
+        if (rb == null || isDashing) return;
+
+        // ── Anti-snag: physics stopped us but there's no real wall → seam ghost collision ──
+        if (antiSnag && moveInput != 0f && Mathf.Abs(currentSpeedX) > 0.5f
+            && Mathf.Abs(rb.velocity.x) < Mathf.Abs(currentSpeedX) * 0.2f)
+        {
+            TryUnsnag(Mathf.Sign(currentSpeedX));
+        }
+
+        rb.velocity = new Vector2(currentSpeedX, rb.velocity.y);
+
+        // ── Smooth Stairs Navigation (Velocity-Proportional Up & Down) ────────
+        if (canWalkUpStair)
+        {
+            HandleStairs(moveInput);
+        }
+
+        // ── Fly force (physics, so applied at fixed rate) ─────────────────────
+        if (isFlyingInput)
+        {
+            rb.AddForce(Vector2.up * flyforce, ForceMode2D.Force);
+        }
+    }
+
+    void TryUnsnag(float dir)
+    {
+        if (PlayerCollider == null) return;
+
+        Bounds b = PlayerCollider.bounds;
+        int mask = stairLayerMask.value != 0 ? stairLayerMask.value : ~LayerMask.GetMask("Ignore Raycast");
+
+        // Check for a real wall at mid-body height. If there is one, the stop is legit.
+        Vector2 midOrigin = new Vector2(b.center.x + dir * (b.extents.x + 0.02f), b.center.y);
+        RaycastHit2D wall = Physics2D.Raycast(midOrigin, Vector2.right * dir, 0.1f, mask);
+        if (wall.collider != null && !wall.collider.isTrigger && wall.collider != PlayerCollider)
+            return;
+
+        // No real wall → caught on a seam. Pop up slightly and keep going.
+        rb.position += new Vector2(dir * 0.01f, snagNudge);
     }
 
     void HandleStairs(float moveInput)
