@@ -118,14 +118,14 @@ public class CatFishMovement : MonoBehaviour
     void FixedUpdate()
     {
         // Record physics velocity before ground collision for impact meter calculation
-        lastPhysicsVelocity = rb.velocity;
+        lastPhysicsVelocity = rb.linearVelocity;
 
         // Handle Active Straight Line Dash
         if (isDashing)
         {
             currentDashTimer -= Time.fixedDeltaTime;
             // Force 100% straight velocity ignoring gravity
-            rb.velocity = currentDashDirection * currentDashSpeed;
+            rb.linearVelocity = currentDashDirection * currentDashSpeed;
 
             if (currentDashTimer <= 0f)
             {
@@ -137,7 +137,7 @@ public class CatFishMovement : MonoBehaviour
         // Apply Pending Jump Physics Impulse
         if (pendingJump)
         {
-            rb.velocity = new Vector2(rb.velocity.x * 0.2f, 0f);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.2f, 0f);
             rb.AddForce(pendingJumpDirection * pendingJumpForce, ForceMode2D.Impulse);
             pendingJump = false;
         }
@@ -307,7 +307,7 @@ public class CatFishMovement : MonoBehaviour
             currentDashSpeed = speed;
 
             rb.gravityScale = 0f;
-            rb.velocity = dashDirection * speed;
+            rb.linearVelocity = dashDirection * speed;
 
             // Pass dash speed directly to attack system so damage scales dynamically
             if (CatFishAttackSystem.instance != null)
@@ -332,7 +332,7 @@ public class CatFishMovement : MonoBehaviour
         isDashing = false;
         rb.gravityScale = originalGravityScale;
         // Retain 25% coasting speed after dash ends for smooth movement feel
-        rb.velocity = currentDashDirection * (currentDashSpeed * 0.25f);
+        rb.linearVelocity = currentDashDirection * (currentDashSpeed * 0.25f);
     }
 
     private void UpdateFacingFromMouse()

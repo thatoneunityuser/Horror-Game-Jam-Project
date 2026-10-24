@@ -8,6 +8,7 @@
     "com.unity.2d.spriteshape": "13.0.0",
     "com.unity.2d.tilemap.extras": "6.0.3",
     "com.unity.2d.tooling": "1.0.4",
+    "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
     "com.unity.multiplayer.center": "1.0.1",
     "com.unity.postprocessing": "3.5.4",
     "com.unity.render-pipelines.universal": "17.3.0",

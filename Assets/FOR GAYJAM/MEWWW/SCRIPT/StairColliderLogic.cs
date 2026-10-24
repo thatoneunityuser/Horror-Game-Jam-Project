@@ -133,7 +133,7 @@ public class StairColliderLogic : MonoBehaviour
         bool feetOnTop = (playerFeet >= tpTop - 0.25f) && (playerFeet <= tpTop + 0.35f);
 
         // Ensure player is not jumping upward from below through the platform
-        bool notJumpingUp = (playerRb == null) || (playerRb.velocity.y <= 0.2f);
+        bool notJumpingUp = (playerRb == null) || (playerRb.linearVelocity.y <= 0.2f);
 
         return withinHorz && feetOnTop && notJumpingUp;
     }

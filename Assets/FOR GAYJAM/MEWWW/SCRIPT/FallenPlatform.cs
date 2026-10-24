@@ -84,10 +84,10 @@ public class FallenPlatform : MonoBehaviour
         float deltaY = currentY - previousPlayerY;
 
         // Prefer Rigidbody2D velocity if moving, otherwise fallback to position delta
-        if (playerRb != null && Mathf.Abs(playerRb.velocity.y) > 0.05f)
+        if (playerRb != null && Mathf.Abs(playerRb.linearVelocity.y) > 0.05f)
         {
-            isGoingUp = playerRb.velocity.y > 0.05f;
-            isGoingDown = playerRb.velocity.y < -0.05f;
+            isGoingUp = playerRb.linearVelocity.y > 0.05f;
+            isGoingDown = playerRb.linearVelocity.y < -0.05f;
         }
         else
         {

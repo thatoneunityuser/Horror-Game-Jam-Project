@@ -157,7 +157,7 @@ public class SideScrollMovement : MonoBehaviour
             currentSpeedX = Mathf.MoveTowards(currentSpeedX, 0f, deceleration * Time.deltaTime);
         }
 
-        isMoving = (moveInput != 0f) || Mathf.Abs(currentSpeedX) > 0.05f || Mathf.Abs(rb.velocity.y) > 0.1f;
+        isMoving = (moveInput != 0f) || Mathf.Abs(currentSpeedX) > 0.05f || Mathf.Abs(rb.linearVelocity.y) > 0.1f;
 
         // ── Flip sprite ───────────────────────────────────────────────────────
         if (moveInput > 0)
@@ -203,12 +203,12 @@ public class SideScrollMovement : MonoBehaviour
 
         // ── Anti-snag: physics stopped us but there's no real wall → seam ghost collision ──
         if (antiSnag && moveInput != 0f && Mathf.Abs(currentSpeedX) > 0.5f
-            && Mathf.Abs(rb.velocity.x) < Mathf.Abs(currentSpeedX) * 0.2f)
+            && Mathf.Abs(rb.linearVelocity.x) < Mathf.Abs(currentSpeedX) * 0.2f)
         {
             TryUnsnag(Mathf.Sign(currentSpeedX));
         }
 
-        rb.velocity = new Vector2(currentSpeedX, rb.velocity.y);
+        rb.linearVelocity = new Vector2(currentSpeedX, rb.linearVelocity.y);
 
         // ── Smooth Stairs Navigation (Velocity-Proportional Up & Down) ────────
         if (canWalkUpStair)
@@ -294,7 +294,7 @@ public class SideScrollMovement : MonoBehaviour
                             rb.position = new Vector2(rb.position.x + forwardPush, newY);
 
                             // Keep clean horizontal velocity and prevent vertical momentum from launching off the top
-                            rb.velocity = new Vector2(currentSpeedX, 0f);
+                            rb.linearVelocity = new Vector2(currentSpeedX, 0f);
                             return;
                         }
                     }
@@ -305,7 +305,7 @@ public class SideScrollMovement : MonoBehaviour
         // ══════════════════════════════════════════════════════════════════════
         // 2. STEP DOWN: Grounded descent so player doesn't float into the air
         // ══════════════════════════════════════════════════════════════════════
-        if (smoothStepDown && rb.velocity.y <= 0.1f)
+        if (smoothStepDown && rb.linearVelocity.y <= 0.1f)
         {
             Vector2 stepDownOrigin = new Vector2(b.center.x + dir * (b.extents.x + 0.1f), feetY + 0.1f);
             RaycastHit2D downHit = Physics2D.Raycast(stepDownOrigin, Vector2.down, limitHeight + 0.2f, mask);
@@ -319,7 +319,7 @@ public class SideScrollMovement : MonoBehaviour
                     float snapSpeed = Mathf.Max(speedX * 2.5f, 10f);
                     float newY = Mathf.MoveTowards(rb.position.y, targetY, snapSpeed * Time.deltaTime);
                     rb.position = new Vector2(rb.position.x, newY);
-                    rb.velocity = new Vector2(currentSpeedX, 0f);
+                    rb.linearVelocity = new Vector2(currentSpeedX, 0f);
                 }
             }
         }
@@ -358,7 +358,7 @@ public class SideScrollMovement : MonoBehaviour
             currentSpeedX = facingDir * dashSpeed;
             if (rb != null)
             {
-                rb.velocity = new Vector2(currentSpeedX, 0f);
+                rb.linearVelocity = new Vector2(currentSpeedX, 0f);
             }
             yield return null;
         }
@@ -367,7 +367,7 @@ public class SideScrollMovement : MonoBehaviour
         if (rb != null)
         {
             rb.gravityScale = originalGravity;
-            rb.velocity = new Vector2(0f, 0f);
+            rb.linearVelocity = new Vector2(0f, 0f);
         }
         currentSpeedX = 0f;
         isDashing = false;
