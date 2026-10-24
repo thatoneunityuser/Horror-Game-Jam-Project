@@ -185,9 +185,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a861e41b342ec6e408d7afa2d7d6f7d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BlindedEntity
-  MovementSensingRange: 30
-  LockerSensingRange: 60
-  SuspectRange: 90
+  MovementSensingRange: 20
+  LockerSensingRange: 40
+  SuspectRange: 60
   StopRange: 3
   lifeTime: 20
   AttackRange: {x: 1.18, y: 4.72}
