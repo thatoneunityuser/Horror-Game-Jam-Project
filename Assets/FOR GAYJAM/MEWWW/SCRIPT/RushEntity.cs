@@ -5,6 +5,7 @@ public class RushEntity : MonoBehaviour
 {
     public float Speed = 10f;
     public float lifetime = 15f;
+    public bool IsReversal = false;
 
     private Hided hideStatus;
 
@@ -16,7 +17,14 @@ public class RushEntity : MonoBehaviour
 
     void LateUpdate()
     {
-        transform.Translate(Vector2.right * Speed * Time.deltaTime);
+        if(IsReversal)
+        {
+            transform.Translate(Vector2.left * Speed * Time.deltaTime);
+        }
+        else
+        {
+            transform.Translate(Vector2.right * Speed * Time.deltaTime);
+        }
     }
 
     void OnTriggerEnter2D(Collider2D other)

@@ -21,6 +21,16 @@ public class FallenPlatform : MonoBehaviour
     public bool allowDropThrough = true;
     public float dropThroughDuration = 0.35f;
 
+    [Header("Stand Above Check (Gizmo Box)")]
+    [Tooltip("Size of the detection box. If set (>0), this box determines if player is standing above platform.")]
+    public Vector2 PlayerStandAboveCheckRange;
+    [Tooltip("Offset of the detection box from this GameObject's position.")]
+    public Vector2 PlayerStandAboveCheckOffset;
+
+    [Header("Stair Reference")]
+    [Tooltip("Stair to destroy once player stands above platform. If unassigned, automatically finds one in scene.")]
+    public StairColliderLogic stairtodelete;
+
     [Header("Debug Status (Read-Only)")]
     public bool isGoingUp;
     public bool isGoingDown;
@@ -34,6 +44,11 @@ public class FallenPlatform : MonoBehaviour
 
     void Start()
     {
+        if (stairtodelete == null)
+        {
+            stairtodelete = FindObjectOfType<StairColliderLogic>();
+        }
+
         if (platformCollider == null)
         {
             platformCollider = GetComponent<Collider2D>();
@@ -76,6 +91,12 @@ public class FallenPlatform : MonoBehaviour
         CheckPlayerVerticalDirection();
         CheckDropThroughInput();
         UpdatePlatformColliderState();
+
+        if (isPlayerAbovePlatform && stairtodelete != null)
+        {
+            Destroy(stairtodelete.gameObject, 0.1f);
+            stairtodelete = null;
+        }
     }
 
     void CheckPlayerVerticalDirection()
@@ -97,11 +118,57 @@ public class FallenPlatform : MonoBehaviour
 
         previousPlayerY = currentY;
 
-        // Check whether player's feet are above the platform top surface
-        float platformTop = (platformCollider != null) ? platformCollider.bounds.max.y : transform.position.y;
-        float playerBottom = (playerCollider != null) ? playerCollider.bounds.min.y : player.position.y;
+        // Check if player is standing above platform using the Gizmo box if configured
+        if (PlayerStandAboveCheckRange.x > 0f && PlayerStandAboveCheckRange.y > 0f)
+        {
+            isPlayerAbovePlatform = CheckPlayerInStandArea();
+        }
+        else
+        {
+            // Fallback: check whether player's feet are above the platform top surface
+            float platformTop = (platformCollider != null) ? platformCollider.bounds.max.y : transform.position.y;
+            float playerBottom = (playerCollider != null) ? playerCollider.bounds.min.y : player.position.y;
 
-        isPlayerAbovePlatform = (playerBottom >= platformTop - surfaceOffset);
+            isPlayerAbovePlatform = (playerBottom >= platformTop - surfaceOffset);
+        }
+    }
+
+    bool CheckPlayerInStandArea()
+    {
+        Vector2 boxCenter = (Vector2)transform.position + PlayerStandAboveCheckOffset;
+
+        // 1. Physics2D OverlapBox check (matches triggers and solid colliders)
+        Collider2D[] hits = Physics2D.OverlapBoxAll(boxCenter, PlayerStandAboveCheckRange, 0f);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            if (hits[i] != null && (hits[i].CompareTag("Player") || hits[i].transform == player || (playerCollider != null && hits[i] == playerCollider)))
+            {
+                return true;
+            }
+        }
+
+        // 2. Direct bounds intersection fallback (ensures detection even across different collision layers)
+        if (playerCollider != null)
+        {
+            Bounds boxBounds = new Bounds(new Vector3(boxCenter.x, boxCenter.y, 0f), new Vector3(PlayerStandAboveCheckRange.x, PlayerStandAboveCheckRange.y, 100f));
+            if (boxBounds.Intersects(playerCollider.bounds))
+            {
+                return true;
+            }
+        }
+
+        // 3. Transform position check fallback
+        if (player != null)
+        {
+            Vector2 halfSize = PlayerStandAboveCheckRange * 0.5f;
+            if (Mathf.Abs(player.position.x - boxCenter.x) <= halfSize.x &&
+                Mathf.Abs(player.position.y - boxCenter.y) <= halfSize.y)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void CheckDropThroughInput()
@@ -169,5 +236,12 @@ public class FallenPlatform : MonoBehaviour
                 }
             }
         }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.green;
+        Vector3 boxCenter = transform.position + (Vector3)PlayerStandAboveCheckOffset;
+        Gizmos.DrawWireCube(boxCenter, new Vector3(PlayerStandAboveCheckRange.x, PlayerStandAboveCheckRange.y, 0.1f));
     }
 }

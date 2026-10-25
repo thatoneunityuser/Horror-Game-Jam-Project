@@ -210,6 +210,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RushEntity
   Speed: 30
   lifetime: 5
+  IsReversal: 0
 --- !u!82 &-578560163753325114
 AudioSource:
   m_ObjectHideFlags: 0
@@ -232,7 +233,7 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 5
-  MaxDistance: 80
+  MaxDistance: 90
   Pan2D: 0
   rolloffMode: 2
   BypassEffects: 0
@@ -244,38 +245,20 @@ AudioSource:
     - serializedVersion: 3
       time: 0.09174881
       value: 1.0121536
-      inSlope: -4.933152
-      outSlope: -4.933152
+      inSlope: -2.9521465
+      outSlope: -2.9521465
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
-      outWeight: 0.059516456
-    - serializedVersion: 3
-      time: 0.6
-      value: 0.2
-      inSlope: -0.42532375
-      outSlope: -0.42532375
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.2625256
-      outWeight: 0.5563964
-    - serializedVersion: 3
-      time: 0.8
-      value: 0.1
-      inSlope: -0.46160597
-      outSlope: -0.46160597
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      outWeight: 0.09860952
     - serializedVersion: 3
       time: 1
       value: 0
-      inSlope: -0.6058112
-      outSlope: -0.6058112
+      inSlope: -0.36676472
+      outSlope: -0.36676472
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.93129873
+      inWeight: 0.22880267
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2

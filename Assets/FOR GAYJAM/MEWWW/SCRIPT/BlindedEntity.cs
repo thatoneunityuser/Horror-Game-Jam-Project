@@ -22,6 +22,8 @@ public class BlindedEntity : MonoBehaviour
     [Header("Movement")]
     public float runAwaySpeed = 3f;
     public float chaseSpeedMultiplier = 2f;
+    public bool IsReversal = false;
+    private SpriteRenderer spriteRenderer;
 
     [Header("Attack & Miss Tracking")]
     public float attackDuration = 0.5f;
@@ -59,6 +61,7 @@ public class BlindedEntity : MonoBehaviour
     void Start()
     {
         FindPlayerReferencesIfNeeded();
+        spriteRenderer = GetComponent<SpriteRenderer>();
         if (animator == null)
         {
             animator = GetComponent<Animator>();
@@ -68,6 +71,11 @@ public class BlindedEntity : MonoBehaviour
             audioSource = GetComponent<AudioSource>();
         }
         Destroy(gameObject, lifeTime);
+
+        if (IsReversal)
+        {
+            spriteRenderer.flipX = true;
+        }
     }
 
     void Update()
@@ -176,8 +184,15 @@ public class BlindedEntity : MonoBehaviour
         {
             transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
         }
+        if(IsReversal)
+        {
+            transform.position += Vector3.left * runAwaySpeed * Time.deltaTime;
+        }
+        else
+        {
+            transform.position += Vector3.right * runAwaySpeed * Time.deltaTime;
+        }
 
-        transform.position += Vector3.right * runAwaySpeed * Time.deltaTime;
         if (animator != null && !animator.GetBool("IsMoving"))
         {
             animator.SetBool("IsMoving", true);

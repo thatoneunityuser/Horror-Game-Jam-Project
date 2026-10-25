@@ -14,6 +14,20 @@ public class RoomCounter : MonoBehaviour
     [Header("Entity Spawner")]
     public SummonTheEntityByRandom entitySpawner;
 
+    [Header("Event / Forced Rooms")]
+    [Tooltip("Event rooms that will force spawn in sequential order by index")]
+    public GameObject[] EventRooms1;
+    [Tooltip("Starting PassedRoomCount for event rooms (inclusive)")]
+    public int eventStartRoom = 30;
+    [Tooltip("Ending PassedRoomCount for event rooms (inclusive)")]
+    public int eventEndRoom = 34;
+
+    [Header("First Event Room Override")]
+    [Tooltip("If true, changes ONLY the first forced event room (index 0 / room 30) to alternateFirstEventRoom")]
+    public bool changeFirstEventRoom = false;
+    [Tooltip("Alternative prefab for the first forced event room")]
+    public GameObject alternateFirstEventRoom;
+
     private List<GameObject> currentRooms = new List<GameObject>();
     private List<GameObject> PreviousRooms = new List<GameObject>();
 
@@ -86,11 +100,83 @@ public class RoomCounter : MonoBehaviour
         }
     }
 
+    // --- Forced Event Room Logic ---
+    public bool HasForcedRoom()
+    {
+        return EventRooms1 != null && EventRooms1.Length > 0 &&
+               PassedRoomCount >= eventStartRoom && PassedRoomCount <= eventEndRoom;
+    }
+
+    public GameObject GetForcedRoomPrefab()
+    {
+        if (!HasForcedRoom()) return null;
+
+        int index = PassedRoomCount - eventStartRoom;
+
+        // ONLY the first room (index 0 / room 30) can be changed by the bool
+        if (index == 0 && changeFirstEventRoom && alternateFirstEventRoom != null)
+        {
+            return alternateFirstEventRoom;
+        }
+
+        if (index >= 0 && index < EventRooms1.Length)
+        {
+            return EventRooms1[index];
+        }
+        else if (EventRooms1.Length > 0)
+        {
+            return EventRooms1[index % EventRooms1.Length];
+        }
+
+        return null;
+    }
+
+    public GameObject SpawnForcedRoom(Transform spawnPoint, GameObject customFirstRoom = null)
+    {
+        int currentCount = PassedRoomCount;
+        int eventIndex = currentCount - eventStartRoom;
+
+        GameObject forcedPrefab = GetForcedRoomPrefab();
+
+        // If an explicit custom room was passed for the first event room (index 0)
+        if (eventIndex == 0 && customFirstRoom != null)
+        {
+            forcedPrefab = customFirstRoom;
+        }
+
+        if (forcedPrefab != null && spawnPoint != null)
+        {
+            string overrideTag = (eventIndex == 0 && (changeFirstEventRoom || customFirstRoom != null))
+                ? " [First Room Changed/Overridden]"
+                : "";
+
+            GameObject newRoom = Instantiate(forcedPrefab, spawnPoint.position, Quaternion.identity);
+            GenerateRoom(newRoom);
+            Debug.Log($"[RoomCounter] Force-spawned Event Room [{eventIndex}]{overrideTag} ('{newRoom.name}') for room count #{currentCount}");
+            return newRoom;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Call this from any script or UnityEvent to toggle changing the first forced room at runtime.
+    /// </summary>
+    public void SetChangeFirstEventRoom(bool enable, GameObject customAltRoom = null)
+    {
+        changeFirstEventRoom = enable;
+        if (customAltRoom != null)
+        {
+            alternateFirstEventRoom = customAltRoom;
+        }
+    }
+
     [Header("Stair Room Tracking")]
     public bool latestGeneratedRoomIsStair = false;
 
     public bool ShouldSpawnStairRoom()
     {
+        // Event rooms force-spawn from PassedRoomCount 30 to 34, so stair room is suppressed
+        if ((PassedRoomCount >= eventStartRoom && PassedRoomCount <= eventEndRoom) || HasForcedRoom()) return false;
         if (staireveryXroom <= 0) return false;
         int nextRoomNumber = PassedRoomCount + 1;
         return nextRoomNumber % staireveryXroom == 0;

@@ -186,8 +186,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BlindedEntity
   MovementSensingRange: 20
-  LockerSensingRange: 40
-  SuspectRange: 60
+  LockerSensingRange: 30
+  SuspectRange: 40
   StopRange: 3
   lifeTime: 20
   AttackRange: {x: 1.18, y: 4.72}
@@ -195,6 +195,7 @@ MonoBehaviour:
   currentState: 0
   runAwaySpeed: 15
   chaseSpeedMultiplier: 2
+  IsReversal: 0
   attackDuration: 1
   missRecoveryTime: 0.15
   missChaseSpeedMultiplier: 2.5

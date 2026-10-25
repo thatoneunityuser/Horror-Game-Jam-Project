@@ -74,6 +74,6 @@ Material:
     - _EyeGlowColor: {r: 1, g: 1, b: 1, a: 1}
     - _GlowColor: {r: 1, g: 0, b: 0, a: 1}
     - _PupilOffset: {r: 0, g: 0, b: 0, a: 0}
-    - _TintColor: {r: 0.91823894, g: 0.38173142, b: 0.37249306, a: 1}
+    - _TintColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

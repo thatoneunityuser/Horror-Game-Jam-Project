@@ -7,6 +7,14 @@ public class RandomRoomGenerate : MonoBehaviour
     public GameObject[] roomPrefabs;
     public GameObject[] snapshotroomprefabs;
     public GameObject[] stairroomprefab;
+    public GameObject[] EventRooms1;
+    
+    [Header("First Event Room Override")]
+    [Tooltip("If true, changes ONLY the first forced event room (room 30) spawned by this trigger")]
+    public bool changeFirstEventRoom = false;
+    [Tooltip("Alternative prefab for the first forced event room (if null, uses RoomCounter's alternate prefab)")]
+    public GameObject alternateFirstEventRoom;
+    
     [Range(0, 100)]
     public int snapshotroomchace = 10;
     [Tooltip("Stair room will spawn every X rooms (overridden by RoomCounter.staireveryXroom if assigned)")]
@@ -45,10 +53,65 @@ public class RandomRoomGenerate : MonoBehaviour
 
         if (roomCounter == null)
         {
-            roomCounter = FindObjectOfType<RoomCounter>();
+            roomCounter = RoomCounter.instance != null ? RoomCounter.instance : FindObjectOfType<RoomCounter>();
         }
 
-        // 1. Final Room check (e.g. at 50 rooms passed)
+        // 1. FORCED EVENT ROOMS: Handled centrally by RoomCounter (30 -> 34 by index)
+        if (roomCounter != null)
+        {
+            // If this trigger enables changeFirstEventRoom, apply it
+            if (changeFirstEventRoom)
+            {
+                roomCounter.changeFirstEventRoom = true;
+                if (alternateFirstEventRoom != null)
+                {
+                    roomCounter.alternateFirstEventRoom = alternateFirstEventRoom;
+                }
+            }
+
+            if (roomCounter.HasForcedRoom())
+            {
+                GameObject customRoom = (changeFirstEventRoom && alternateFirstEventRoom != null)
+                    ? alternateFirstEventRoom
+                    : null;
+
+                roomCounter.SpawnForcedRoom(spawnPoint, customRoom);
+                return;
+            }
+            // Fallback: If EventRooms1 was configured on this prefab rather than RoomCounter
+            else if (EventRooms1 != null && EventRooms1.Length > 0 && roomCounter.PassedRoomCount >= 30 && roomCounter.PassedRoomCount <= 34)
+            {
+                int eventIndex = roomCounter.PassedRoomCount - 30;
+                GameObject fallbackPrefab;
+
+                if (eventIndex == 0 && (changeFirstEventRoom || roomCounter.changeFirstEventRoom))
+                {
+                    fallbackPrefab = (alternateFirstEventRoom != null)
+                        ? alternateFirstEventRoom
+                        : roomCounter.alternateFirstEventRoom;
+
+                    if (fallbackPrefab == null)
+                    {
+                        fallbackPrefab = EventRooms1[0];
+                    }
+                }
+                else
+                {
+                    fallbackPrefab = (eventIndex >= 0 && eventIndex < EventRooms1.Length)
+                        ? EventRooms1[eventIndex]
+                        : EventRooms1[eventIndex % EventRooms1.Length];
+                }
+
+                if (fallbackPrefab != null)
+                {
+                    GameObject spawnedRoom = Instantiate(fallbackPrefab, spawnPoint.position, Quaternion.identity);
+                    roomCounter.GenerateRoom(spawnedRoom);
+                    return;
+                }
+            }
+        }
+
+        // 2. Final Room check (e.g. at 50 rooms passed)
         if (roomCounter != null && roomCounter.PassedRoomCount >= 50 && LastRoom != null)
         {
             GameObject finalRoom = Instantiate(LastRoom, spawnPoint.position, Quaternion.identity);
@@ -70,7 +133,7 @@ public class RandomRoomGenerate : MonoBehaviour
         int random = Random.Range(0, 100);
         GameObject prefabToSpawn = null;
 
-        // TOP PRIORITY: Stair room condition evaluated FIRST (e.g. every 5th room)
+        // TOP PRIORITY: Stair room condition (e.g. every 5th room)
         if (isStairRoomTime && hasStairRooms)
         {
             int randomIndex = Random.Range(0, stairroomprefab.Length);
