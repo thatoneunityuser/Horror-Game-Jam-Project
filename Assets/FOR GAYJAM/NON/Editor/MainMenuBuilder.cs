@@ -19,6 +19,45 @@ namespace HorrorJam.UI.Editor
             BuildMainMenu(true);
         }
 
+        [MenuItem("Tools/Horror UI/Add Flashlight Effect to Current Menu", priority = 3)]
+        public static void AddFlashlightToCurrentScene()
+        {
+            GameObject bgArt = GameObject.Find("Background_Art");
+            if (bgArt == null)
+            {
+                MainMenuController mm = Object.FindFirstObjectByType<MainMenuController>();
+                if (mm != null)
+                {
+                    Transform t = mm.transform.Find("Background_Art");
+                    if (t != null) bgArt = t.gameObject;
+                }
+            }
+
+            if (bgArt != null)
+            {
+                FlashlightController fc = bgArt.GetComponent<FlashlightController>();
+                if (fc == null)
+                {
+                    fc = Undo.AddComponent<FlashlightController>(bgArt);
+                }
+                fc.diameter = 560f;
+                fc.softness = 90f;
+                fc.ambientDarkness = 0.0f;
+                fc.enableFullScreenFlicker = true;
+                if (fc.flickerSfx == null)
+                {
+                    fc.flickerSfx = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/NON/Audio/Light_Flicker.wav");
+                }
+                EditorUtility.SetDirty(bgArt);
+                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(bgArt.scene);
+                Debug.Log("[Horror UI] FlashlightController successfully added to Background_Art (560px diameter + Full Screen Flicker)!");
+            }
+            else
+            {
+                Debug.LogWarning("[Horror UI] Could not find Background_Art in the current scene.");
+            }
+        }
+
         public static GameObject BuildMainMenu(bool savePrefab)
         {
             // 1. Ensure EventSystem exists
@@ -43,17 +82,18 @@ namespace HorrorJam.UI.Editor
             Sprite iconPowerSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{SPRITES_DIR}/Icon_Power.png");
             Sprite panelBgSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{SPRITES_DIR}/Panel_Background.png");
 
-            TMP_FontAsset titleFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>($"{FONTS_DIR}/Remnant-Regular SDF.asset");
-            TMP_FontAsset buttonFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>($"{FONTS_DIR}/PixelatedEleganceRegular SDF.asset");
-            TMP_FontAsset versionFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>($"{FONTS_DIR}/XTypewriter-Bold SDF.asset");
-            TMP_FontAsset optionsFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>($"{FONTS_DIR}/Coolvetica-Rg SDF.asset");
+            TMP_FontAsset titleFont = FontAssetUtility.GetOrCreateFontAsset($"{FONTS_DIR}/Remnant-Regular.ttf", $"{FONTS_DIR}/Remnant-Regular SDF.asset");
+            TMP_FontAsset buttonFont = FontAssetUtility.GetOrCreateFontAsset($"{FONTS_DIR}/PixelatedEleganceRegular.ttf", $"{FONTS_DIR}/PixelatedEleganceRegular SDF.asset");
+            TMP_FontAsset versionFont = FontAssetUtility.GetOrCreateFontAsset($"{FONTS_DIR}/XTypewriter-Bold.ttf", $"{FONTS_DIR}/XTypewriter-Bold SDF.asset");
+            TMP_FontAsset optionsFont = FontAssetUtility.GetOrCreateFontAsset($"{FONTS_DIR}/Coolvetica-Rg.otf", $"{FONTS_DIR}/Coolvetica-Rg SDF.asset");
 
             // Fallback font if any font failed to load
             TMP_FontAsset defaultTMPFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
-            if (titleFont == null) titleFont = defaultTMPFont;
-            if (buttonFont == null) buttonFont = defaultTMPFont;
-            if (versionFont == null) versionFont = defaultTMPFont;
-            if (optionsFont == null) optionsFont = defaultTMPFont;
+            if (defaultTMPFont == null) defaultTMPFont = TMP_Settings.defaultFontAsset;
+            if (!FontAssetUtility.IsValidFontAsset(titleFont)) titleFont = defaultTMPFont;
+            if (!FontAssetUtility.IsValidFontAsset(buttonFont)) buttonFont = defaultTMPFont;
+            if (!FontAssetUtility.IsValidFontAsset(versionFont)) versionFont = defaultTMPFont;
+            if (!FontAssetUtility.IsValidFontAsset(optionsFont)) optionsFont = defaultTMPFont;
 
             // 4. Create Root UI Object
             GameObject root = new GameObject("MainMenu_Root", typeof(RectTransform));
@@ -67,6 +107,8 @@ namespace HorrorJam.UI.Editor
             AudioSource audioSource = root.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
             controller.audioSource = audioSource;
+            controller.hoverSfx = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/NON/Audio/UI_Hover.wav");
+            controller.clickSfx = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/NON/Audio/UI_Click.wav");
 
             // 5. Background Black Fill
             GameObject bgBlack = CreateUIObject("Background_Black", root.transform);
@@ -84,6 +126,11 @@ namespace HorrorJam.UI.Editor
             }
             imgArt.color = Color.white;
             StretchFull(bgArt.GetComponent<RectTransform>());
+
+            FlashlightController fc = bgArt.AddComponent<FlashlightController>();
+            fc.diameter = 560f;
+            fc.softness = 90f;
+            fc.ambientDarkness = 0.0f;
 
             // 7. Vignette Overlay (Dark radial horror mask)
             GameObject vignette = CreateUIObject("Vignette_Overlay", root.transform);
@@ -251,6 +298,10 @@ namespace HorrorJam.UI.Editor
 
             TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
             tmp.font = font;
+            if (font != null && font.material != null)
+            {
+                tmp.fontSharedMaterial = font.material;
+            }
             tmp.text = text;
             tmp.fontSize = fontSize;
             tmp.alignment = TextAlignmentOptions.Center;
@@ -284,6 +335,7 @@ namespace HorrorJam.UI.Editor
             MenuButtonEffects fx = btnObj.AddComponent<MenuButtonEffects>();
             fx.borderImage = img;
             fx.hoverScale = 1.08f;
+            fx.enableProgressiveRed = false;
 
             return btn;
         }

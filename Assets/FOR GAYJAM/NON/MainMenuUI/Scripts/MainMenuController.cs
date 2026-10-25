@@ -50,8 +50,12 @@ namespace HorrorJam.UI
         public AudioSource audioSource;
         public AudioClip hoverSfx;
         public AudioClip clickSfx;
+        [Range(0f, 1f)] public float hoverVolume = 0.6f;
+        [Range(0f, 1f)] public float clickVolume = 0.85f;
 
         private bool isLoadingScene = false;
+        private float lastHoverTime = -1f;
+        private float lastClickTime = -1f;
 
         private void Awake()
         {
@@ -59,6 +63,29 @@ namespace HorrorJam.UI
             {
                 screenFader.alpha = 1f;
                 screenFader.blocksRaycasts = true;
+            }
+
+            if (audioSource == null)
+            {
+                audioSource = GetComponent<AudioSource>();
+                if (audioSource == null)
+                {
+                    audioSource = gameObject.AddComponent<AudioSource>();
+                }
+            }
+            if (audioSource != null)
+            {
+                audioSource.playOnAwake = false;
+            }
+
+            // If no custom clips are assigned in Inspector, create built-in default horror UI clips so audio always works!
+            if (hoverSfx == null)
+            {
+                hoverSfx = CreateProceduralHoverClip();
+            }
+            if (clickSfx == null)
+            {
+                clickSfx = CreateProceduralClickClip();
             }
         }
 
@@ -265,14 +292,60 @@ namespace HorrorJam.UI
 
         public void PlayHoverSfx()
         {
+            if (Time.unscaledTime - lastHoverTime < 0.04f) return;
+            lastHoverTime = Time.unscaledTime;
+
             if (audioSource != null && hoverSfx != null)
-                audioSource.PlayOneShot(hoverSfx, 0.6f);
+                audioSource.PlayOneShot(hoverSfx, hoverVolume);
         }
 
         public void PlayClickSfx()
         {
+            if (Time.unscaledTime - lastClickTime < 0.04f) return;
+            lastClickTime = Time.unscaledTime;
+
             if (audioSource != null && clickSfx != null)
-                audioSource.PlayOneShot(clickSfx, 0.8f);
+                audioSource.PlayOneShot(clickSfx, clickVolume);
+        }
+
+        private static AudioClip CreateProceduralHoverClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.08f;
+            int numSamples = Mathf.FloorToInt(sampleRate * duration);
+            float[] samples = new float[numSamples];
+            for (int i = 0; i < numSamples; i++)
+            {
+                float t = (float)i / sampleRate;
+                float env = Mathf.Exp(-t * 40f);
+                float freq = Mathf.Lerp(260f, 130f, t / duration);
+                float wave = Mathf.Sin(2f * Mathf.PI * freq * t);
+                samples[i] = wave * env * 0.6f;
+            }
+            AudioClip clip = AudioClip.Create("UI_Hover_Procedural", numSamples, 1, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
+        }
+
+        private static AudioClip CreateProceduralClickClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.07f;
+            int numSamples = Mathf.FloorToInt(sampleRate * duration);
+            float[] samples = new float[numSamples];
+            System.Random rand = new System.Random(42);
+            for (int i = 0; i < numSamples; i++)
+            {
+                float t = (float)i / sampleRate;
+                float env = Mathf.Exp(-t * 55f);
+                float freq = Mathf.Lerp(520f, 150f, t / duration);
+                float wave = Mathf.Sin(2f * Mathf.PI * freq * t);
+                float noise = ((float)rand.NextDouble() * 2f - 1f) * Mathf.Exp(-t * 100f) * 0.35f;
+                samples[i] = (wave * 0.7f + noise) * env * 0.85f;
+            }
+            AudioClip clip = AudioClip.Create("UI_Click_Procedural", numSamples, 1, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
         }
 
         public void LoadScene(string sceneName)
