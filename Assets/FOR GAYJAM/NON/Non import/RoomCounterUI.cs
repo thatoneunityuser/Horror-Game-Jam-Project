@@ -6,9 +6,10 @@ using TMPro;
 /// <summary>
 /// UI แสดงผลตัวเลขนับห้อง (Room Counter UI)
 /// - แสดงผลเป็นตัวเลขเปล่าๆ ชัดเจน เรียบง่าย สไตล์มินิมอล (Clean & Minimalist)
-/// - ค่าเริ่มต้นสีขาวล้วน (Pure White) ตามที่ต้องการ
+/// - ค่าเริ่มต้น: สีขาวล้วน (Pure White)
+/// - รองรับการปรับเป็นสีแดง (Red Mode): สามารถติ๊กปรับใน Inspector หรือเรียกใช้ผ่านโค้ดได้ (ค่าเริ่มต้นปิดไว้ตามที่ขอ)
 /// - มีระบบเปลี่ยนสีตัวเลขอัตโนมัติเมื่อถึงชั้นสำคัญ (Milestone Colors)
-/// - มี API ฟังก์ชัน SetNumberColor ให้สคริปต์อื่นเรียกเปลี่ยนสีตามแมคคานิกเกมได้ทันที
+/// - มี Live Preview ในหน้าต่าง Inspector ทันทีเมื่อปรับค่า
 /// </summary>
 public class RoomCounterUI : MonoBehaviour
 {
@@ -28,7 +29,17 @@ public class RoomCounterUI : MonoBehaviour
     [Tooltip("ตัวเลขที่จะบวกเพิ่มจาก PassedRoomCount (เช่น ถ้าห้องเริ่มนับที่ 1 ให้ใส่ 0 หรือ 1)")]
     public int roomOffset = 0;
 
+    [Header("=== Red Mode (โหมดตัวเลขสีแดง) ===")]
+    [Tooltip("ติ๊กเพื่อเปิดโหมดตัวเลขสีแดง (ตอนนี้ตั้งเป็น false ไว้ก่อน สามารถติ๊กเปิดใน Inspector หรือเรียกเปิดจากโค้ดได้เมื่อพร้อมใช้งาน)")]
+    public bool isRedMode = false;
+
+    [Tooltip("สีแดงที่ต้องการให้แสดงเมื่อเปิดโหมดสีแดง")]
+    public Color redColor = new Color(1f, 0.22f, 0.22f, 1f);
+
     [Header("=== Milestone Room Colors (ชั้นสำคัญเปลี่ยนสีอัตโนมัติ) ===")]
+    [Tooltip("เปิดใช้งานระบบเปลี่ยนสีตามชั้นสำคัญอัตโนมัติหรือไม่ (ค่าเริ่มต้น: ปิดไว้ก่อน)")]
+    public bool enableMilestoneColors = false;
+
     [Tooltip("รายการชั้นสำคัญที่ต้องการให้เปลี่ยนสีอัตโนมัติ (เช่น ชั้น 30, 34, 50)")]
     public List<MilestoneRoomColor> milestoneColors = new List<MilestoneRoomColor>()
     {
@@ -90,7 +101,7 @@ public class RoomCounterUI : MonoBehaviour
             GameObject textGo = new GameObject("RoomNumber_Text");
             textGo.transform.SetParent(transform, false);
             roomNumberText = textGo.AddComponent<TextMeshProUGUI>();
-            roomNumberText.fontSize = 72;
+            roomNumberText.fontSize = 76;
             roomNumberText.fontStyle = FontStyles.Bold;
             roomNumberText.alignment = TextAlignmentOptions.TopRight;
             roomNumberText.outlineWidth = 0.15f;
@@ -105,8 +116,7 @@ public class RoomCounterUI : MonoBehaviour
         if (roomNumberText != null)
         {
             originalScale = roomNumberText.transform.localScale;
-            currentColor = defaultColor;
-            roomNumberText.color = currentColor;
+            ApplyActiveColor();
         }
     }
 
@@ -163,9 +173,8 @@ public class RoomCounterUI : MonoBehaviour
             }
         }
 
-        // ตรวจสอบสีประจำชั้นสำคัญ (Milestone Colors)
-        Color milestoneCol = GetMilestoneColor(room);
-        SetNumberColor(milestoneCol, false);
+        // ปรับใช้สีตามสถานะปัจจุบัน
+        ApplyActiveColor();
 
         // แอนิเมชัน Punch เมื่อตัวเลขขยับ (ไม่เล่นตอนเริ่มเกมครั้งแรก)
         if (!isInitial && enablePunchAnimation && gameObject.activeInHierarchy)
@@ -175,9 +184,25 @@ public class RoomCounterUI : MonoBehaviour
         }
     }
 
-    private Color GetMilestoneColor(int room)
+    /// <summary>
+    /// คำนวณและปรับสีตัวเลขตามสถานะ (Red Mode -> Milestone -> Default)
+    /// </summary>
+    public void ApplyActiveColor()
     {
-        if (milestoneColors != null)
+        Color targetCol = GetTargetColor(currentRoomNumber >= 0 ? currentRoomNumber : 0);
+        SetNumberColor(targetCol, false);
+    }
+
+    private Color GetTargetColor(int room)
+    {
+        // 1. ลำดับแรก: ถ้าเปิด Red Mode ให้แสดงสีแดง
+        if (isRedMode)
+        {
+            return redColor;
+        }
+
+        // 2. ถ้าเปิดใช้งาน Milestone Colors
+        if (enableMilestoneColors && milestoneColors != null)
         {
             for (int i = 0; i < milestoneColors.Count; i++)
             {
@@ -187,10 +212,29 @@ public class RoomCounterUI : MonoBehaviour
                 }
             }
         }
+
+        // 3. สีปกติ (สีขาว)
         return defaultColor;
     }
 
     #region Public APIs for Gameplay Mechanics (สำหรับเรียกใช้งานจากโค้ดอื่น)
+
+    /// <summary>
+    /// [API] สั่งเปิดหรือปิดโหมดตัวเลขสีแดง (Red Mode)
+    /// </summary>
+    public void SetRedMode(bool enableRed)
+    {
+        isRedMode = enableRed;
+        ApplyActiveColor();
+    }
+
+    /// <summary>
+    /// [API] สลับสถานะเปิด/ปิดโหมดตัวเลขสีแดง
+    /// </summary>
+    public void ToggleRedMode()
+    {
+        SetRedMode(!isRedMode);
+    }
 
     /// <summary>
     /// [API] เปลี่ยนสีตัวเลขทันที (เช่น เมื่อเจออีเวนต์สำคัญ, ห้องพิเศษ, บอส, หรือฉากหลอน)
@@ -216,7 +260,8 @@ public class RoomCounterUI : MonoBehaviour
     /// </summary>
     public void ResetColor()
     {
-        SetNumberColor(defaultColor, false);
+        isRedMode = false;
+        ApplyActiveColor();
     }
 
     /// <summary>
@@ -281,4 +326,22 @@ public class RoomCounterUI : MonoBehaviour
     }
 
     #endregion
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// แสดงผลสีตามที่ปรับใน Inspector ทันทีในหน้าต่าง Scene / Game View แม้ยังไม่ได้กด Play
+    /// </summary>
+    private void OnValidate()
+    {
+        if (roomNumberText == null)
+        {
+            roomNumberText = GetComponentInChildren<TextMeshProUGUI>();
+        }
+
+        if (roomNumberText != null)
+        {
+            roomNumberText.color = isRedMode ? redColor : defaultColor;
+        }
+    }
+#endif
 }

@@ -86,93 +86,36 @@ namespace HorrorJam.UI.Editor
             roomUI.defaultColor = Color.white;
             hudManager.roomCounterUI = roomUI;
 
-            // 3. Flashlight Container (Bottom-Right: Minimalist ON / OFF status, NO battery bar)
-            GameObject flashContainer = new GameObject("Flashlight_Container");
+            // 3. Flashlight Icon (Bottom-Right: Pure Icon-Only Minimalist HUD)
+            GameObject flashContainer = new GameObject("Flashlight_Icon");
             flashContainer.transform.SetParent(rootGo.transform, false);
 
             RectTransform flashRect = flashContainer.AddComponent<RectTransform>();
             flashRect.anchorMin = new Vector2(1, 0);
             flashRect.anchorMax = new Vector2(1, 0);
             flashRect.pivot = new Vector2(1, 0);
-            flashRect.anchoredPosition = new Vector2(-40, 40);
-            flashRect.sizeDelta = new Vector2(200, 65);
+            flashRect.anchoredPosition = new Vector2(-50, 50);
+            flashRect.sizeDelta = new Vector2(56, 56);
 
-            // Subtle dark background panel for contrast
-            Image flashBg = flashContainer.AddComponent<Image>();
-            flashBg.color = new Color(0.08f, 0.08f, 0.10f, 0.55f);
-            flashBg.raycastTarget = false;
+            // Load Flashlight Icon Sprites
+            Sprite iconOnSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/FOR GAYJAM/NON/Non import/Sprites/Flashlight_Icon_On.png");
+            Sprite iconOffSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/FOR GAYJAM/NON/Non import/Sprites/Flashlight_Icon_Off.png");
 
-            // Header Label: "FLASHLIGHT"
-            GameObject labelGo = new GameObject("Flashlight_Label");
-            labelGo.transform.SetParent(flashContainer.transform, false);
+            Image iconImg = flashContainer.AddComponent<Image>();
+            iconImg.sprite = (iconOnSprite != null) ? iconOnSprite : iconOffSprite;
+            iconImg.preserveAspect = true;
+            iconImg.color = Color.white;
+            iconImg.raycastTarget = true;
 
-            RectTransform labelRect = labelGo.AddComponent<RectTransform>();
-            labelRect.anchorMin = new Vector2(0, 0.55f);
-            labelRect.anchorMax = new Vector2(1, 1);
-            labelRect.pivot = new Vector2(0.5f, 0.5f);
-            labelRect.offsetMin = new Vector2(12, 0);
-            labelRect.offsetMax = new Vector2(-12, -4);
-
-            TextMeshProUGUI labelTmp = labelGo.AddComponent<TextMeshProUGUI>();
-            labelTmp.text = "FLASHLIGHT";
-            labelTmp.fontSize = 15;
-            labelTmp.fontStyle = FontStyles.Bold;
-            labelTmp.characterSpacing = 8;
-            labelTmp.color = new Color(0.7f, 0.72f, 0.78f, 0.75f);
-            labelTmp.alignment = TextAlignmentOptions.Left;
-            if (fontAsset != null) labelTmp.font = fontAsset;
-
-            // Status Row Container
-            GameObject statusRow = new GameObject("Status_Row");
-            statusRow.transform.SetParent(flashContainer.transform, false);
-
-            RectTransform rowRect = statusRow.AddComponent<RectTransform>();
-            rowRect.anchorMin = new Vector2(0, 0);
-            rowRect.anchorMax = new Vector2(1, 0.55f);
-            rowRect.pivot = new Vector2(0.5f, 0.5f);
-            rowRect.offsetMin = new Vector2(12, 4);
-            rowRect.offsetMax = new Vector2(-12, 0);
-
-            // LED Dot Indicator
-            GameObject dotGo = new GameObject("LED_Dot");
-            dotGo.transform.SetParent(statusRow.transform, false);
-
-            RectTransform dotRect = dotGo.AddComponent<RectTransform>();
-            dotRect.anchorMin = new Vector2(0, 0.5f);
-            dotRect.anchorMax = new Vector2(0, 0.5f);
-            dotRect.pivot = new Vector2(0, 0.5f);
-            dotRect.sizeDelta = new Vector2(10, 10);
-            dotRect.anchoredPosition = new Vector2(0, 0);
-
-            Image dotImg = dotGo.AddComponent<Image>();
-            dotImg.color = new Color(0.3f, 1f, 0.5f, 1f);
-            dotImg.raycastTarget = false;
-
-            // Status Text: "ON" / "OFF"
-            GameObject statusTextGo = new GameObject("Status_Text");
-            statusTextGo.transform.SetParent(statusRow.transform, false);
-
-            RectTransform statRect = statusTextGo.AddComponent<RectTransform>();
-            statRect.anchorMin = new Vector2(0, 0);
-            statRect.anchorMax = new Vector2(1, 1);
-            statRect.pivot = new Vector2(0, 0.5f);
-            statRect.offsetMin = new Vector2(20, 0);
-            statRect.offsetMax = new Vector2(0, 0);
-
-            TextMeshProUGUI statusTmp = statusTextGo.AddComponent<TextMeshProUGUI>();
-            statusTmp.text = "ON";
-            statusTmp.fontSize = 24;
-            statusTmp.fontStyle = FontStyles.Bold;
-            statusTmp.alignment = TextAlignmentOptions.Left;
-            statusTmp.color = new Color(0.95f, 0.98f, 1f, 1f);
-            if (fontAsset != null) statusTmp.font = fontAsset;
-
-            // Setup FlashlightUI
+            // Setup FlashlightUI directly on the icon
             FlashlightUI flashlightUI = flashContainer.AddComponent<FlashlightUI>();
-            flashlightUI.statusText = statusTmp;
-            flashlightUI.labelText = labelTmp;
-            flashlightUI.indicatorDot = dotImg;
+            flashlightUI.flashlightIcon = iconImg;
+            flashlightUI.iconOnSprite = iconOnSprite;
+            flashlightUI.iconOffSprite = iconOffSprite;
+            flashlightUI.onColor = Color.white;
+            flashlightUI.offColor = new Color(0.6f, 0.6f, 0.65f, 0.35f);
             flashlightUI.toggleKey = KeyCode.T;
+            flashlightUI.allowClickOnIcon = true;
             flashlightUI.isFlashlightOn = true;
             hudManager.flashlightUI = flashlightUI;
 
@@ -220,3 +163,5 @@ namespace HorrorJam.UI.Editor
         }
     }
 }
+// Trigger reload
+// Rebuild icon-only HUD

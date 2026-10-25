@@ -1,204 +1,166 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
-using TMPro;
-
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
+using UnityEngine.EventSystems;
 
 /// <summary>
-/// UI แสดงสถานะไฟฉาย (Flashlight Status UI)
-/// - แสดงผลสถานะ ON / OFF เรียบง่าย มินิมอล ชัดเจน (Clean & Minimalist)
-/// - ไม่ต้องมีหลอดเลือด/หลอดแบตเตอรี่ ตามที่ต้องการ
-/// - รองรับการกดปุ่มเปิด-ปิดไฟฉายในเกม (Toggle Key)
-/// - ควบคุมการเปิด-ปิด Light2D หรือ GameObject ไฟฉายในฉากให้อัตโนมัติ
+/// สคริปต์ควบคุมไอคอนไฟฉายบนหน้าจอ (Icon-Only Flashlight HUD)
+/// - ใช้งานง่ายสุดๆ: เพียงลากสคริปต์นี้ใส่ GameObject ไอคอนไฟฉาย (Image) ใน Canvas ก็พร้อมใช้งานทันที
+/// - รองรับการกดปุ่มคีย์บอร์ด (เช่น ปุ่ม T หรือคลิกขวา) และสามารถคลิกที่ตัวไอคอนไฟฉายบนจอได้โดยตรง
+/// - ตรวจหาไฟฉายในฉาก (GameObject ชื่อ "Flashlight'" หรือ Light2D ใต้ Player) ให้อัตโนมัติ
+/// - ปรับเปลี่ยนหน้าตาไอคอนเมื่อ เปิด (สว่าง/มีลำแสง) หรือ ปิด (หรี่ลง/โปร่งแสง) อย่างสวยงาม
 /// </summary>
-public class FlashlightUI : MonoBehaviour
+[RequireComponent(typeof(Image))]
+[AddComponentMenu("Horror UI/Flashlight UI (Icon Only)")]
+public class FlashlightUI : MonoBehaviour, IPointerClickHandler
 {
     public static FlashlightUI Instance { get; private set; }
 
-    [Header("=== Light Target Control ===")]
-    [Tooltip("GameObject ของไฟฉาย (ถ้าเว้นว่างไว้ ระบบจะค้นหา GameObject ชื่อ Flashlight' ให้อัตโนมัติ)")]
+    [Header("=== Flashlight Icon (องค์ประกอบภาพ) ===")]
+    [Tooltip("Image ไอคอนไฟฉาย (ระบบจะดึงจากตัวมันเองให้อัตโนมัติ)")]
+    public Image flashlightIcon;
+
+    [Tooltip("รูปไอคอนไฟฉายตอนเปิด (ON) - มีลำแสงสว่าง")]
+    public Sprite iconOnSprite;
+
+    [Tooltip("รูปไอคอนไฟฉายตอนปิด (OFF) - ลำแสงดับ (ถ้าไม่ใส่จะใช้การหรี่สี/ความโปร่งแสงแทนอัตโนมัติ)")]
+    public Sprite iconOffSprite;
+
+    [Header("=== Icon Colors (สีและความโปร่งแสง) ===")]
+    [Tooltip("สีของไอคอนตอนเปิด (ON) - สว่างเต็มที่")]
+    public Color onColor = Color.white;
+
+    [Tooltip("สีของไอคอนตอนปิด (OFF) - หรี่มืดลงหรือโปร่งแสง")]
+    public Color offColor = new Color(0.6f, 0.6f, 0.65f, 0.35f);
+
+    [Header("=== In-Game Light Target (เป้าหมายไฟฉายในเกม) ===")]
+    [Tooltip("GameObject ไฟฉายในฉาก (ถ้าเว้นว่างไว้ ระบบจะค้นหา GameObject ชื่อ 'Flashlight\'' หรือใต้ตัว Player ให้อัตโนมัติ)")]
     public GameObject targetLightObject;
 
-    [Tooltip("คอมโพเนนต์ Light2D (ถ้ามี ระบบจะเปิด/ปิด Light2D ให้อัตโนมัติ)")]
-    public Behaviour targetLight2D;
+    [Tooltip("คอมโพเนนต์แสง (Light2D หรือ Light) - ถ้ามีจะเปิด/ปิดแสงที่ตัวนี้โดยตรง")]
+    public Behaviour targetLightComponent;
 
-    [Tooltip("สถานะเริ่มต้นของไฟฉาย")]
+    [Tooltip("สถานะเริ่มต้นเมื่อเริ่มเกม (เปิดหรือปิด)")]
     public bool isFlashlightOn = true;
 
-    [Header("=== Controls & Input ===")]
-    [Tooltip("ปุ่มคีย์บอร์ดสำหรับเปิด/ปิดไฟฉาย (ค่าเริ่มต้น: KeyCode.T หรือ KeyCode.R เพื่อไม่ชนกับ F ที่เป็น Dash)")]
+    [Header("=== Controls & Input (การควบคุม) ===")]
+    [Tooltip("ปุ่มคีย์บอร์ดสำหรับกดเปิด/ปิดไฟฉาย (ค่าเริ่มต้น: KeyCode.T เพื่อไม่ให้ชนกับปุ่ม F ที่ใช้ Dash)")]
     public KeyCode toggleKey = KeyCode.T;
 
-    [Tooltip("อนุญาตให้คลิกขวา (Mouse Right Click) เพื่อเปิด/ปิดไฟฉายด้วยหรือไม่")]
-    public bool allowRightClickToggle = false;
+    [Tooltip("อนุญาตให้คลิกขวา (Mouse Right Click) เพื่อเปิด/ปิดไฟฉายได้ด้วยหรือไม่")]
+    public bool allowRightClick = false;
 
-    [Header("=== UI Elements ===")]
-    [Tooltip("ข้อความแสดงสถานะ 'ON' / 'OFF'")]
-    public TextMeshProUGUI statusText;
+    [Tooltip("อนุญาตให้คลิกเมาส์ที่ตัวไอคอนไฟฉายบนหน้าจอเพื่อเปิด/ปิดไฟฉาย")]
+    public bool allowClickOnIcon = true;
 
-    [Tooltip("หัวข้อกำกับ (เช่น 'FLASHLIGHT')")]
-    public TextMeshProUGUI labelText;
+    [Header("=== Tactile Punch Animation (เด้งดึ๋งเมื่อกด) ===")]
+    [Tooltip("เปิดแอนิเมชันขยายเด้งดึ๋งเล็กน้อยเมื่อสลับสถานะไฟฉาย")]
+    public bool enablePunchAnimation = true;
+    public float punchScale = 1.25f;
+    public float punchDuration = 0.18f;
 
-    [Tooltip("จุดไฟ LED เล็กๆ แสดงสถานะ (สีสว่างตอน ON, สีมืดตอน OFF)")]
-    public Image indicatorDot;
+    [Header("=== Audio Feedback (เสียงคลิกสวิตช์) ===")]
+    [Tooltip("เสียงคลิกตอนเปิดไฟฉาย")]
+    public AudioClip switchOnSound;
 
-    [Header("=== Color Settings (Clean & Minimal) ===")]
-    [Tooltip("สีข้อความสถานะตอนไฟฉายเปิด (ON)")]
-    public Color onTextColor = new Color(0.95f, 0.98f, 1f, 1f);
-
-    [Tooltip("สีข้อความสถานะตอนไฟฉายปิด (OFF)")]
-    public Color offTextColor = new Color(0.45f, 0.45f, 0.5f, 0.65f);
-
-    [Tooltip("สีจุดไฟ LED ตอนเปิด (ON)")]
-    public Color onDotColor = new Color(0.3f, 1f, 0.5f, 1f);
-
-    [Tooltip("สีจุดไฟ LED ตอนปิด (OFF)")]
-    public Color offDotColor = new Color(0.85f, 0.2f, 0.2f, 0.5f);
-
-    [Header("=== Audio Feedback (Optional) ===")]
-    [Tooltip("เสียงคลิกสวิตช์ตอนเปิดไฟฉาย")]
-    public AudioClip toggleOnSound;
-
-    [Tooltip("เสียงคลิกสวิตช์ตอนปิดไฟฉาย")]
-    public AudioClip toggleOffSound;
+    [Tooltip("เสียงคลิกตอนปิดไฟฉาย")]
+    public AudioClip switchOffSound;
 
     [Header("=== Events ===")]
+    [Tooltip("Event ที่จะส่งค่าสถานะไฟฉาย (true = เปิด, false = ปิด) ออกไปให้ระบบอื่นใช้งาน")]
     public UnityEvent<bool> onFlashlightToggled;
 
+    // สถานะภายใน
     private AudioSource audioSource;
+    private Coroutine punchCoroutine;
+    private Vector3 initialScale = Vector3.one;
 
     public bool IsOn => isFlashlightOn;
 
     void Awake()
     {
+        // กำหนด Singleton
         if (Instance == null)
         {
             Instance = this;
         }
         else if (Instance != this)
         {
+            // หากมีชิ้นอื่นอยู่แล้ว ให้ลบตัวซ้ำออก
             Destroy(gameObject);
             return;
         }
 
-        if (statusText == null)
+        // ดึง Image อัตโนมัติ
+        if (flashlightIcon == null)
         {
-            statusText = GetComponentInChildren<TextMeshProUGUI>();
+            flashlightIcon = GetComponent<Image>();
         }
 
-        if (statusText == null)
+        if (flashlightIcon != null)
         {
-            GameObject stGo = new GameObject("Status_Text");
-            stGo.transform.SetParent(transform, false);
-            statusText = stGo.AddComponent<TextMeshProUGUI>();
-            statusText.fontSize = 24;
-            statusText.fontStyle = FontStyles.Bold;
-            statusText.alignment = TextAlignmentOptions.Left;
-            statusText.text = isFlashlightOn ? "ON" : "OFF";
+            initialScale = flashlightIcon.transform.localScale;
+
+            // หากยังไม่ได้ตั้ง iconOnSprite ให้จำ sprite ปัจจุบันไว้
+            if (iconOnSprite == null && flashlightIcon.sprite != null)
+            {
+                iconOnSprite = flashlightIcon.sprite;
+            }
         }
 
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-            audioSource.playOnAwake = false;
-        }
+        // ตั้งค่า AudioSource
+        SetupAudio();
 
-        AutoFindFlashlightIfNeeded();
-        AutoLoadDefaultSounds();
+        // โหลด Resource พื้นฐานอัตโนมัติหากยังไม่มี
+        AutoLoadDefaultResources();
+
+        // ค้นหาเป้าหมายแสงไฟฉายในฉาก
+        FindInGameLightTarget();
     }
 
     void Start()
     {
+        // ปรับหน้าตาและสถานะเริ่มต้น
         UpdateVisuals(false);
         ApplyLightState();
     }
 
     void Update()
     {
-        HandleInput();
+        HandleKeyboardInput();
     }
 
-    private void HandleInput()
+    /// <summary>
+    /// รับการคลิกที่ตัวไอคอนบนหน้าจอโดยตรงผ่าน IPointerClickHandler
+    /// </summary>
+    public void OnPointerClick(PointerEventData eventData)
     {
-        bool toggleTriggered = false;
+        if (!allowClickOnIcon) return;
 
-        if (toggleKey != KeyCode.None && Input.GetKeyDown(toggleKey))
-        {
-            toggleTriggered = true;
-        }
-
-        if (allowRightClickToggle && Input.GetMouseButtonDown(1))
-        {
-            toggleTriggered = true;
-        }
-
-        if (toggleTriggered)
+        if (eventData.button == PointerEventData.InputButton.Left)
         {
             ToggleFlashlight();
         }
     }
 
-    /// <summary>
-    /// ค้นหา GameObject ไฟฉายของผู้เล่นในฉากอัตโนมัติหากยังไม่ได้ผูกไว้
-    /// </summary>
-    public void AutoFindFlashlightIfNeeded()
+    private void HandleKeyboardInput()
     {
-        if (targetLightObject == null && targetLight2D == null)
+        bool triggered = false;
+
+        if (toggleKey != KeyCode.None && Input.GetKeyDown(toggleKey))
         {
-            // 1. ค้นหา GameObject ชื่อ Flashlight' หรือ Flashlight
-            GameObject fl = GameObject.Find("Flashlight'");
-            if (fl == null) fl = GameObject.Find("Flashlight");
-            if (fl == null) fl = GameObject.Find("flashlight");
-
-            if (fl != null)
-            {
-                targetLightObject = fl;
-            }
-            else
-            {
-                // 2. ค้นหาใต้ตัว Player
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
-                {
-                    Transform t = player.transform.Find("Flashlight'");
-                    if (t == null) t = player.transform.Find("Flashlight");
-                    if (t != null)
-                    {
-                        targetLightObject = t.gameObject;
-                    }
-                }
-            }
-
-            // 3. ค้นหา Component Light2D
-            if (targetLightObject != null)
-            {
-                // ตรวจหา Component ใดๆ ที่เป็น Light2D หรือ Light
-                Behaviour[] behaviours = targetLightObject.GetComponents<Behaviour>();
-                foreach (var b in behaviours)
-                {
-                    if (b != null && (b.GetType().Name.Contains("Light2D") || b.GetType().Name == "Light"))
-                    {
-                        targetLight2D = b;
-                        break;
-                    }
-                }
-            }
+            triggered = true;
         }
-    }
 
-    private void AutoLoadDefaultSounds()
-    {
-        if (toggleOnSound == null)
+        if (allowRightClick && Input.GetMouseButtonDown(1))
         {
-            toggleOnSound = Resources.Load<AudioClip>("FloatingPrompt/E_Interact_HorrorClick");
+            triggered = true;
         }
-        if (toggleOffSound == null)
+
+        if (triggered)
         {
-            toggleOffSound = Resources.Load<AudioClip>("FloatingPrompt/E_Focus_SubtleTick");
+            ToggleFlashlight();
         }
     }
 
@@ -213,34 +175,63 @@ public class FlashlightUI : MonoBehaviour
     }
 
     /// <summary>
-    /// [API] สั่งเปิดหรือปิดไฟฉายตามค่าที่ส่งเข้ามา
+    /// [API] สั่งเปิดหรือปิดไฟฉายตามค่า boolean ที่กำหนด
     /// </summary>
     public void SetFlashlight(bool state)
     {
-        if (isFlashlightOn == state) return;
+        // ตรวจหาเป้าหมายแสงอีกครั้งเผื่อกรณี Player เพิ่ง Spawn
+        if (targetLightObject == null && targetLightComponent == null)
+        {
+            FindInGameLightTarget();
+        }
 
         isFlashlightOn = state;
 
-        // สั่งงานแสงจริงในฉาก
+        // 1. ควบคุมแสงไฟในเกม
         ApplyLightState();
 
-        // อัปเดตหน้าตา UI
+        // 2. อัปเดตรูปลักษณ์ไอคอน
         UpdateVisuals(true);
 
-        // เล่นเสียงสวิตช์
-        PlayToggleSound(isFlashlightOn);
+        // 3. เล่นเสียงคลิกสวิตช์
+        PlaySwitchSound(isFlashlightOn);
 
-        // ยิง Event ให้ระบบอื่นๆ รับรู้
+        // 4. ส่ง Event ให้ระบบภายนอก
         onFlashlightToggled?.Invoke(isFlashlightOn);
     }
 
     #endregion
 
+    /// <summary>
+    /// อัปเดตสี รูปร่าง และแอนิเมชันของไอคอน
+    /// </summary>
+    public void UpdateVisuals(bool animate)
+    {
+        if (flashlightIcon == null) return;
+
+        // สลับ Sprite (ถ้ามี sprite แยก On/Off)
+        Sprite targetSprite = isFlashlightOn ? iconOnSprite : (iconOffSprite != null ? iconOffSprite : iconOnSprite);
+        if (targetSprite != null)
+        {
+            flashlightIcon.sprite = targetSprite;
+        }
+
+        // ปรับเปลี่ยนสีหรือความโปร่งแสง
+        flashlightIcon.color = isFlashlightOn ? onColor : offColor;
+
+        // เล่นแอนิเมชันเด้งดึ๋ง
+        if (animate && enablePunchAnimation && gameObject.activeInHierarchy)
+        {
+            if (punchCoroutine != null) StopCoroutine(punchCoroutine);
+            punchCoroutine = StartCoroutine(DoPunchScale());
+        }
+    }
+
     private void ApplyLightState()
     {
-        if (targetLight2D != null)
+        if (targetLightComponent != null)
         {
-            targetLight2D.enabled = isFlashlightOn;
+            targetLightComponent.enabled = isFlashlightOn;
         }
         else if (targetLightObject != null)
         {
@@ -248,59 +239,116 @@ public class FlashlightUI : MonoBehaviour
         }
     }
 
-    private void UpdateVisuals(bool animate)
+    private IEnumerator DoPunchScale()
     {
-        if (statusText != null)
-        {
-            statusText.text = isFlashlightOn ? "ON" : "OFF";
-            statusText.color = isFlashlightOn ? onTextColor : offTextColor;
+        if (flashlightIcon == null) yield break;
 
-            if (animate)
+        float half = punchDuration * 0.5f;
+        float elapsed = 0f;
+        Vector3 target = initialScale * punchScale;
+
+        // ขยายออก
+        while (elapsed < half)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            flashlightIcon.transform.localScale = Vector3.Lerp(initialScale, target, elapsed / half);
+            yield return null;
+        }
+
+        // หดกลับเท่าเดิม
+        elapsed = 0f;
+        while (elapsed < half)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            flashlightIcon.transform.localScale = Vector3.Lerp(target, initialScale, elapsed / half);
+            yield return null;
+        }
+
+        flashlightIcon.transform.localScale = initialScale;
+    }
+
+    /// <summary>
+    /// ค้นหา GameObject หรือ Light2D ของไฟฉายในฉากให้อัตโนมัติ
+    /// </summary>
+    public void FindInGameLightTarget()
+    {
+        if (targetLightObject != null || targetLightComponent != null) return;
+
+        // 1. ค้นหา GameObject ชื่อ "Flashlight'" หรือ "Flashlight"
+        GameObject fl = GameObject.Find("Flashlight'");
+        if (fl == null) fl = GameObject.Find("Flashlight");
+        if (fl == null) fl = GameObject.Find("flashlight");
+
+        if (fl != null)
+        {
+            targetLightObject = fl;
+        }
+        else
+        {
+            // 2. ค้นหาใต้ตัว Player
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
             {
-                // ขยายเล็กน้อยตอนกดสลับสถานะ
-                statusText.transform.localScale = Vector3.one * 1.2f;
-                LeanTweenOrSimplePunch(statusText.gameObject);
+                Transform t = player.transform.Find("Flashlight'");
+                if (t == null) t = player.transform.Find("Flashlight");
+                if (t != null)
+                {
+                    targetLightObject = t.gameObject;
+                }
             }
         }
 
-        if (indicatorDot != null)
+        // 3. ตรวจหา Light2D / Light component
+        if (targetLightObject != null)
         {
-            indicatorDot.color = isFlashlightOn ? onDotColor : offDotColor;
+            Behaviour[] behaviours = targetLightObject.GetComponents<Behaviour>();
+            foreach (var b in behaviours)
+            {
+                if (b != null && (b.GetType().Name.Contains("Light2D") || b.GetType().Name == "Light"))
+                {
+                    targetLightComponent = b;
+                    break;
+                }
+            }
         }
     }
 
-    private void LeanTweenOrSimplePunch(GameObject go)
+    private void SetupAudio()
     {
-        // Simple coroutine-free punch bounce using scale reset
-        if (go != null)
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
         {
-            StopAllCoroutines();
-            StartCoroutine(ScaleBackRoutine(go.transform));
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
         }
     }
 
-    private System.Collections.IEnumerator ScaleBackRoutine(Transform t)
+    private void AutoLoadDefaultResources()
     {
-        float elapsed = 0f;
-        float dur = 0.2f;
-        Vector3 start = t.localScale;
-        Vector3 end = Vector3.one;
-
-        while (elapsed < dur)
+        if (iconOnSprite == null)
         {
-            elapsed += Time.deltaTime;
-            t.localScale = Vector3.Lerp(start, end, elapsed / dur);
-            yield return null;
+            iconOnSprite = Resources.Load<Sprite>("FloatingPrompt/Flashlight_Icon_On");
         }
-        t.localScale = end;
+        if (iconOffSprite == null)
+        {
+            iconOffSprite = Resources.Load<Sprite>("FloatingPrompt/Flashlight_Icon_Off");
+        }
+        if (switchOnSound == null)
+        {
+            switchOnSound = Resources.Load<AudioClip>("FloatingPrompt/E_Interact_HorrorClick");
+        }
+        if (switchOffSound == null)
+        {
+            switchOffSound = Resources.Load<AudioClip>("FloatingPrompt/E_Focus_SubtleTick");
+        }
     }
 
-    private void PlayToggleSound(bool on)
+    private void PlaySwitchSound(bool on)
     {
-        AudioClip clip = on ? toggleOnSound : toggleOffSound;
+        AudioClip clip = on ? switchOnSound : switchOffSound;
         if (clip != null && audioSource != null)
         {
-            audioSource.PlayOneShot(clip, 0.6f);
+            audioSource.PlayOneShot(clip, 0.65f);
         }
     }
 }

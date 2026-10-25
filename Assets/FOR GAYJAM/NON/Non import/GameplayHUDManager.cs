@@ -62,6 +62,36 @@ public class GameplayHUDManager : MonoBehaviour
     }
 
     /// <summary>
+    /// สั่งเปิดหรือปิดโหมดตัวเลขสีแดง (Red Mode)
+    /// </summary>
+    public static void SetRoomRedMode(bool isRed)
+    {
+        if (Instance != null && Instance.roomCounterUI != null)
+        {
+            Instance.roomCounterUI.SetRedMode(isRed);
+        }
+        else if (RoomCounterUI.Instance != null)
+        {
+            RoomCounterUI.Instance.SetRedMode(isRed);
+        }
+    }
+
+    /// <summary>
+    /// สลับสถานะเปิด/ปิดโหมดตัวเลขสีแดง (Red Mode)
+    /// </summary>
+    public static void ToggleRoomRedMode()
+    {
+        if (Instance != null && Instance.roomCounterUI != null)
+        {
+            Instance.roomCounterUI.ToggleRedMode();
+        }
+        else if (RoomCounterUI.Instance != null)
+        {
+            RoomCounterUI.Instance.ToggleRedMode();
+        }
+    }
+
+    /// <summary>
     /// สั่งกะพริบสีตัวเลขนับห้องชั่วคราว
     /// </summary>
     public static void FlashRoomColor(Color color, float duration = 1.0f)
