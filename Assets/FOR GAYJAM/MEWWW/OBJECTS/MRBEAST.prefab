@@ -218,8 +218,8 @@ MonoBehaviour:
   hitDistance: 1.5
   chaseStartRoom: 32
   jumpRoom: 38
-  slideDistance: 20
-  slideDuration: 1
+  slideDistance: 10
+  slideDuration: 2
   deathGravityScale: 1
   destroyDelayAfterSlide: 2
   TimelineWhenDead: {fileID: 0}

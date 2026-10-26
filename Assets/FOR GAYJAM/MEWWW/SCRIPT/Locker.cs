@@ -7,10 +7,26 @@ public class Locker : MonoBehaviour
     public Animator animator;
     public Transform HideSpot;
 
+    [Header("Audio")]
+    public AudioSource a;
+    public AudioClip On;
+    public AudioClip Off;
+
     private Hided hided;
     private bool isPlayerInsideThisLocker = false;
     private SideScrollMovement playerMovement;
     private Rigidbody2D rb;
+
+    void Awake()
+    {
+        EnsureAudioSource();
+#if UNITY_EDITOR
+        if (On == null)
+            On = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/MEWWW/AUDIOOOO/door open.wav");
+        if (Off == null)
+            Off = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/MEWWW/AUDIOOOO/door close.wav");
+#endif
+    }
 
     void Start()
     {
@@ -18,6 +34,7 @@ public class Locker : MonoBehaviour
         {
             animator = GetComponent<Animator>();
         }
+        EnsureAudioSource();
         hided = FindObjectOfType<Hided>();
         FindPlayerIfNeeded();
     }
@@ -42,6 +59,10 @@ public class Locker : MonoBehaviour
                 {
                     animator.Play("Locker Interacted");
                 }
+                else
+                {
+                    close();
+                }
                 ExitLocker();
             }
             // If player is in range of this locker and not currently hiding, press E to enter
@@ -50,6 +71,10 @@ public class Locker : MonoBehaviour
                 if (animator != null)
                 {
                     animator.Play("Locker Interacted");
+                }
+                else
+                {
+                    open();
                 }
                 EnterLocker();
             }
@@ -133,5 +158,37 @@ public class Locker : MonoBehaviour
     {
         if (PlayerPos == null) return false;
         return Vector3.Distance(PlayerPos.position, transform.position) < LockerUseRange.x;
+    }
+    public void open()
+    {
+        EnsureAudioSource();
+        if (a != null && On != null)
+        {
+            a.PlayOneShot(On);
+        }
+    }
+
+    public void close()
+    {
+        EnsureAudioSource();
+        if (a != null && Off != null)
+        {
+            a.PlayOneShot(Off);
+        }
+    }
+
+    private void EnsureAudioSource()
+    {
+        if (a == null)
+        {
+            a = GetComponent<AudioSource>();
+            if (a == null) a = GetComponentInChildren<AudioSource>();
+            if (a == null) a = gameObject.AddComponent<AudioSource>();
+        }
+        if (a != null)
+        {
+            a.playOnAwake = false;
+            a.spatialBlend = 0f; // 2D playback so distance to Main Camera doesn't mute it
+        }
     }
 }

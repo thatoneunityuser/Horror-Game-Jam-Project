@@ -14,6 +14,9 @@ public class SummonTheEntityByRandom : MonoBehaviour
     public int minRooms = 3;
     public int maxRooms = 5;
     public int CountDown;
+    [Tooltip("If true, this spawner will summon an entity only once, then deactivate/destroy itself")]
+    public bool SummonOnce;
+    private bool hasSpawned = false;
 
     [Header("Stair Room Prevention")]
     [Tooltip("If true, BlindedEntity will never spawn when the next room is a stair room")]
@@ -45,6 +48,8 @@ public class SummonTheEntityByRandom : MonoBehaviour
 
     public void DecreaseCountDown()
     {
+        if (SummonOnce && hasSpawned) return;
+
         InitCountdown();
 
         // Ignore duplicate calls in the same frame (door event + trigger + room generate)
@@ -57,20 +62,35 @@ public class SummonTheEntityByRandom : MonoBehaviour
         if (CountDown <= 0)
         {
             bool spawned = Spawn();
-            if (!spawned && delaySpawnIfBlockedByStair && IsNextRoomStairRoom())
+            if (spawned)
             {
-                // Delay attempt by 1 room until player exits the stair room
-                CountDown = 1;
+                if (SummonOnce)
+                {
+                    // Spawn() already handled hasSpawned and cleanup
+                    return;
+                }
+                ResetCountdown();
             }
             else
             {
-                ResetCountdown();
+                if (delaySpawnIfBlockedByStair && IsNextRoomStairRoom())
+                {
+                    // Delay attempt by 1 room until player exits the stair room
+                    CountDown = 1;
+                }
+                else
+                {
+                    ResetCountdown();
+                }
             }
         }
     }
 
+    [ContextMenu("Spawn Entity")]
     public bool Spawn()
     {
+        if (SummonOnce && hasSpawned) return false;
+
         // Re-roll chance for this cycle
         RollChance();
 
@@ -124,7 +144,28 @@ public class SummonTheEntityByRandom : MonoBehaviour
             AnomalyCheck.instance.AddedNewAnomaly(newEnemy);
         }
 
+        if (SummonOnce)
+        {
+            hasSpawned = true;
+            enabled = false;
+            CleanupAfterSummonOnce();
+        }
+
         return true;
+    }
+
+    private void CleanupAfterSummonOnce()
+    {
+        // If this component is attached to a GameObject with other core scripts (like RoomCounter or Camera),
+        // only destroy this script component so we don't accidentally destroy the entire manager GameObject!
+        if (GetComponent<RoomCounter>() != null || GetComponent<Camera>() != null || CompareTag("Player"))
+        {
+            Destroy(this);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     public bool IsBlindedEntity(GameObject obj)
@@ -155,6 +196,12 @@ public class SummonTheEntityByRandom : MonoBehaviour
 
     private void RollChance()
     {
+        if (SummonOnce)
+        {
+            // If SummonOnce is enabled, guarantee the spawn when countdown expires
+            Spawnable = true;
+            return;
+        }
         int chance = Random.Range(0, 100);
         Spawnable = (chance < spawnChancePercentage);
     }

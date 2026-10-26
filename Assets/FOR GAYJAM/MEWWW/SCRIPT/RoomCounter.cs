@@ -31,6 +31,10 @@ public class RoomCounter : MonoBehaviour
     [Tooltip("Alternative prefab for the first forced event room")]
     public GameObject alternateFirstEventRoom;
 
+    [Header("Room Tracking")]
+    [Tooltip("The most recently generated room. This room is explicitly protected from ever being treated as a previous room.")]
+    public GameObject latestGeneratedRoom;
+
     public List<GameObject> currentRooms = new List<GameObject>();
     public List<GameObject> PreviousRooms = new List<GameObject>();
 
@@ -43,6 +47,14 @@ public class RoomCounter : MonoBehaviour
         else if (instance != this)
         {
             Destroy(gameObject);
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (instance == this)
+        {
+            instance = null;
         }
     }
 
@@ -60,9 +72,16 @@ public class RoomCounter : MonoBehaviour
         currentRooms.RemoveAll(r => r == null);
         PreviousRooms.RemoveAll(r => r == null);
 
+        // Safeguard: The latest generated room must NEVER be in PreviousRooms
+        if (latestGeneratedRoom != null)
+        {
+            PreviousRooms.Remove(latestGeneratedRoom);
+        }
+
         while (currentRooms.Count > maxRooms)
         {
-            if (currentRooms[0] != null)
+            // Do not destroy the latest generated room when enforcing maxRooms
+            if (currentRooms[0] != null && currentRooms[0] != latestGeneratedRoom)
             {
                 Destroy(currentRooms[0]);
             }
@@ -75,16 +94,39 @@ public class RoomCounter : MonoBehaviour
     {
         if (room == null) return;
 
-        currentRooms.Add(room);
+        // Clean up any destroyed references first
+        currentRooms.RemoveAll(r => r == null);
+        PreviousRooms.RemoveAll(r => r == null);
 
-        // When a new room is added, the room right before it becomes a previous room
+        // Guard against duplicate calls with the exact same room instance
+        // (prevents room from matching currentRooms.Count - 2 and being added to PreviousRooms)
+        if (currentRooms.Contains(room))
+        {
+            Debug.LogWarning($"[RoomCounter] Room '{room.name}' has already been registered. Duplicate GenerateRoom call ignored.");
+            return;
+        }
+
+        currentRooms.Add(room);
+        latestGeneratedRoom = room;
+
+        // Ensure newly generated room is NEVER in PreviousRooms
+        PreviousRooms.Remove(room);
+
+        // When a new room is added, the room right before it becomes a previous room candidate
         if (currentRooms.Count > 1)
         {
             GameObject prev = currentRooms[currentRooms.Count - 2];
-            if (prev != null && !PreviousRooms.Contains(prev))
+            // Only add if prev is valid, not the newly generated room, not latestGeneratedRoom, and not already added
+            if (prev != null && prev != room && prev != latestGeneratedRoom && !PreviousRooms.Contains(prev))
             {
                 PreviousRooms.Add(prev);
             }
+        }
+
+        // Final safeguard: latestGeneratedRoom must never be in PreviousRooms
+        if (latestGeneratedRoom != null)
+        {
+            PreviousRooms.Remove(latestGeneratedRoom);
         }
 
         PassedRoomCount++;
@@ -222,10 +264,19 @@ public class RoomCounter : MonoBehaviour
 
     public void DestroyAllPreviousRoom()
     {
-        // 1. Destroy all rooms marked in PreviousRooms
+        currentRooms.RemoveAll(r => r == null);
+        PreviousRooms.RemoveAll(r => r == null);
+
+        // Safeguard: The latest generated room must NEVER be destroyed as a previous room
+        if (latestGeneratedRoom != null)
+        {
+            PreviousRooms.Remove(latestGeneratedRoom);
+        }
+
+        // 1. Destroy all rooms marked in PreviousRooms (strictly excluding latestGeneratedRoom)
         foreach (GameObject room in PreviousRooms)
         {
-            if (room != null)
+            if (room != null && room != latestGeneratedRoom)
             {
                 Destroy(room);
             }
@@ -235,7 +286,7 @@ public class RoomCounter : MonoBehaviour
         // 2. Keep only the latest active room, destroying older ones
         while (currentRooms.Count > 1)
         {
-            if (currentRooms[0] != null)
+            if (currentRooms[0] != null && currentRooms[0] != latestGeneratedRoom)
             {
                 Destroy(currentRooms[0]);
             }

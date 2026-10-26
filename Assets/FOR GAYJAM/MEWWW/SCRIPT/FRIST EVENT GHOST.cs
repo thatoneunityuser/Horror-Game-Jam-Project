@@ -24,13 +24,17 @@ public class FRISTEVENTGHOST : MonoBehaviour
     public int chaseStartRoom = 31;
     public int jumpRoom = 34;
 
-    [Header("Death Slide & Gravity")]
-    [Tooltip("Meters the ghost slides away when it misses/dies")]
+    [Header("Death Movement & Gravity")]
+    [Tooltip("Meters the ghost slides to the right when it misses/dies")]
     public float slideDistance = 5f;
-    [Tooltip("How many seconds the slide takes")]
+    [Tooltip("How many seconds the horizontal slide takes")]
     public float slideDuration = 0.8f;
-    [Tooltip("Gravity scale when sliding/dying")]
-    public float deathGravityScale = 1f;
+    [Tooltip("Height in meters the ghost rises on death before falling (default: 2m)")]
+    public float riseHeight = 2f;
+    [Tooltip("Duration in seconds for the initial rise (default: 0.5s)")]
+    public float riseDuration = 0.5f;
+    [Tooltip("Downward gravity acceleration when falling")]
+    public float fallGravity = 15f;
     [Tooltip("Time to wait after sliding before destroying the ghost")]
     public float destroyDelayAfterSlide = 2f;
 
@@ -84,6 +88,8 @@ public class FRISTEVENTGHOST : MonoBehaviour
 
     void FindPlayer()
     {
+        if (died || currentState == GhostState.DEAD) return;
+
         if (playerTransform == null)
         {
             GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -241,99 +247,119 @@ public class FRISTEVENTGHOST : MonoBehaviour
         died = true;
         currentState = GhostState.DEAD;
         currentSpeed = 0f;
+        playerTransform = null; // Sever player tracking immediately
+
+        // Disable all ghost colliders immediately so it cannot touch, block, or stick to the player or locker
+        if (ghostCollider != null)
+        {
+            ghostCollider.enabled = false;
+        }
+        Collider2D[] allCols = GetComponentsInChildren<Collider2D>();
+        foreach (var col in allCols)
+        {
+            if (col != null) col.enabled = false;
+        }
+
+        // Keep Rigidbody as Kinematic so physics contacts never freeze or clamp position
         if (rb != null)
         {
+            rb.bodyType = RigidbodyType2D.Kinematic;
             rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
         }
+
         StartCoroutine(DiesRoutine());
     }
 
     IEnumerator DiesRoutine()
     {
         currentSpeed = 0f;
+        playerTransform = null;
 
-        // 1. Determine slide direction (continue moving past player or along last movement direction)
-        float dirX = (lastMoveDirection.x >= 0f) ? 1f : -1f;
-
-        // 2. Ignore collision with player so the sliding ghost doesn't hurt or push player
-        Collider2D playerCol = null;
-        if (playerTransform != null)
+        // Ensure colliders stay completely disabled
+        if (ghostCollider != null) ghostCollider.enabled = false;
+        Collider2D[] allCols = GetComponentsInChildren<Collider2D>();
+        foreach (var col in allCols)
         {
-            playerCol = playerTransform.GetComponent<Collider2D>();
-            if (playerCol == null)
-            {
-                playerCol = playerTransform.GetComponentInChildren<Collider2D>();
-            }
+            if (col != null) col.enabled = false;
         }
 
-        if (ghostCollider != null)
-        {
-            if (playerCol != null)
-            {
-                Physics2D.IgnoreCollision(ghostCollider, playerCol, true);
-            }
-            // Make collider solid so it lands on floors and platforms instead of falling into the void
-            ghostCollider.isTrigger = false;
-        }
-
-        // 3. Enable physics gravity and dynamic body
         if (rb != null)
         {
-            rb.bodyType = RigidbodyType2D.Dynamic;
-            rb.gravityScale = deathGravityScale;
-            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+            rb.bodyType = RigidbodyType2D.Kinematic;
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
         }
 
-        // 4. Play Timeline if assigned
+        Debug.Log("[FRISTEVENTGHOST] Ghost died! Colliders disabled. Rising 2m, sliding right, then falling down.");
+
+        // Play Timeline if assigned
         if (TimelineWhenDead != null)
         {
             TimelineWhenDead.Play();
         }
 
-        // 5. Slide horizontally over slideDuration using MovePosition for guaranteed 5 meter slide
+        // 1. Setup positions: slide RIGHT on X (+slideDistance), rise 2m on Y (+riseHeight)
         float startX = transform.position.x;
-        float targetX = startX + (dirX * slideDistance);
+        float startY = transform.position.y;
+        float targetX = startX + slideDistance; // Guaranteed move to the RIGHT!
+        float peakY = startY + riseHeight;      // Rise up 2 meters!
+
         float elapsed = 0f;
+        float currentY = startY;
+        float fallSpeed = 0f;
 
-        while (elapsed < slideDuration)
+        float totalMotionDuration = slideDuration + destroyDelayAfterSlide;
+        if (TimelineWhenDead != null)
         {
-            elapsed += Time.fixedDeltaTime;
-            float t = Mathf.Clamp01(elapsed / slideDuration);
-            // Ease-out quad deceleration
-            float easeT = 1f - (1f - t) * (1f - t);
-            float currentX = Mathf.Lerp(startX, targetX, easeT);
+            totalMotionDuration = Mathf.Max(totalMotionDuration, (float)TimelineWhenDead.duration);
+        }
 
-            if (rb != null)
+        while (elapsed < totalMotionDuration)
+        {
+            float dt = Time.deltaTime;
+            elapsed += dt;
+
+            // --- Horizontal (X) Motion: Slide to the RIGHT ---
+            float currentX;
+            if (elapsed <= slideDuration)
             {
-                rb.MovePosition(new Vector2(currentX, rb.position.y));
+                float tX = Mathf.Clamp01(elapsed / slideDuration);
+                float easeX = 1f - (1f - tX) * (1f - tX); // Ease-out quad
+                currentX = Mathf.Lerp(startX, targetX, easeX);
             }
             else
             {
-                transform.position = new Vector3(currentX, transform.position.y, transform.position.z);
+                currentX = targetX;
             }
 
-            yield return new WaitForFixedUpdate();
+            // --- Vertical (Y) Motion: Rise 2m in 0.5s, then keep falling down ---
+            if (elapsed <= riseDuration)
+            {
+                // Rise up 2 meters in riseDuration (0.5s)
+                float tY = Mathf.Clamp01(elapsed / riseDuration);
+                float easeY = Mathf.Sin(tY * Mathf.PI * 0.5f); // Smooth curve to peak
+                currentY = Mathf.Lerp(startY, peakY, easeY);
+                fallSpeed = 0f;
+            }
+            else
+            {
+                // Keep falling down! Accelerate downward like gravity
+                fallSpeed += fallGravity * dt;
+                currentY -= fallSpeed * dt;
+            }
+
+            // Directly move transform and Rigidbody position
+            transform.position = new Vector3(currentX, currentY, transform.position.z);
+            if (rb != null)
+            {
+                rb.position = new Vector2(currentX, currentY);
+            }
+
+            yield return null;
         }
 
-        // Ensure ghost stops completely on X after slide
-        if (rb != null)
-        {
-            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
-        }
-
-        // 6. Wait before destroying
-        float waitRemaining = destroyDelayAfterSlide;
-        if (TimelineWhenDead != null)
-        {
-            waitRemaining = Mathf.Max(waitRemaining, (float)TimelineWhenDead.duration - slideDuration);
-        }
-
-        if (waitRemaining > 0f)
-        {
-            yield return new WaitForSeconds(waitRemaining);
-        }
-
-        // 7. Hide renderers and destroy
+        // Hide renderers and destroy
         if (hideRenderersOnDeath)
         {
             Renderer[] renderers = GetComponentsInChildren<Renderer>();

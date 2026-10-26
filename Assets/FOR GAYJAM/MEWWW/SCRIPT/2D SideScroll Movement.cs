@@ -9,6 +9,14 @@ public class SideScrollMovement : MonoBehaviour
     public float deceleration = 60.0f; 
     [HideInInspector] public bool isMoving;
 
+    [Header("Audio")]
+    public AudioClip Walk;
+    public AudioClip Sprint;
+    [Range(0f, 1f)] public float walkVolume = 0.8f;
+    [Range(0f, 1f)] public float sprintVolume = 1.0f;
+    [Tooltip("Optional: dedicated AudioSource for footsteps. If unassigned, one will be found or added automatically.")]
+    public AudioSource audioSource;
+
     [Header("Sprint")]
     public float sprintMultiplier = 2.0f;   // max speed multiplier while sprinting
     public float maxStamina = 100.0f;
@@ -56,8 +64,8 @@ public class SideScrollMovement : MonoBehaviour
     private float dashCooldownTimer = 0f;
     private float currentSpeedX = 0f;       // tracked horizontal speed (Terraria-style)
     private Rigidbody2D rb;
-    private AudioSource audioSource;
     private float originalGravity = 1f;
+    private readonly RaycastHit2D[] groundHits = new RaycastHit2D[4];
     private Coroutine dashCoroutine;
 
     // Input cached in Update, consumed in FixedUpdate
@@ -72,6 +80,29 @@ public class SideScrollMovement : MonoBehaviour
 
     void Start()
     {
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        audioSource.playOnAwake = false;
+        audioSource.loop = true;
+        audioSource.spatialBlend = 0f; // 2D playback so distance to camera doesn't attenuate footstep audio
+
+#if UNITY_EDITOR
+        if (Walk == null)
+        {
+            Walk = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/MEWWW/AUDIOOOO/walk.wav");
+        }
+        if (Sprint == null)
+        {
+            Sprint = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/MEWWW/AUDIOOOO/run.wav");
+        }
+#endif
+
         rb = GetComponent<Rigidbody2D>();
         if (rb != null)
         {
@@ -93,13 +124,6 @@ public class SideScrollMovement : MonoBehaviour
             noFriction.bounciness = 0f;
             PlayerCollider.sharedMaterial = noFriction;
         }
-
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-            audioSource.playOnAwake = false;
-        }
     }
 
     void OnDisable()
@@ -116,6 +140,7 @@ public class SideScrollMovement : MonoBehaviour
         isDashing = false;
         isMoving = false;
         currentSpeedX = 0f;
+        StopMovementAudio();
     }
 
     void Update()
@@ -128,6 +153,7 @@ public class SideScrollMovement : MonoBehaviour
         if (isDashing)
         {
             isMoving = true;
+            StopMovementAudio();
             return;
         }
 
@@ -211,6 +237,9 @@ public class SideScrollMovement : MonoBehaviour
                 dashCoroutine = StartCoroutine(DashRoutine(moveInput));
             }
         }
+
+        // ── Footstep Audio ────────────────────────────────────────────────────
+        HandleMovementAudio(isSprinting);
     }
 
     void FixedUpdate()
@@ -345,6 +374,7 @@ public class SideScrollMovement : MonoBehaviour
     {
         isDashing = true;
         stamina -= dashStaminaCost;
+        StopMovementAudio();
 
         if (audioSource != null && dashSound != null)
         {
@@ -418,5 +448,87 @@ public class SideScrollMovement : MonoBehaviour
             Vector2 stepDownOrigin = new Vector2(b.center.x + dir * (b.extents.x + 0.1f), feetY + 0.1f);
             Gizmos.DrawLine(stepDownOrigin, stepDownOrigin + Vector2.down * (limitHeight + 0.2f));
         }
+
+        // Ground check box (yellow)
+        Gizmos.color = Color.yellow;
+        Vector2 groundBoxOrigin = new Vector2(b.center.x, feetY + 0.05f);
+        Vector2 groundBoxSize = new Vector2(Mathf.Max(0.1f, b.size.x * 0.7f), 0.05f);
+        Gizmos.DrawWireCube(groundBoxOrigin + Vector2.down * 0.1f, groundBoxSize);
+    }
+
+    private void HandleMovementAudio(bool isSprinting)
+    {
+        if (audioSource == null) return;
+
+        bool hasInput = moveInput != 0f;
+        bool isMovingHorizontally = hasInput && (Mathf.Abs(currentSpeedX) > 0.1f || (rb != null && Mathf.Abs(rb.linearVelocity.x) > 0.1f));
+        bool isMovingOnFoot = isMovingHorizontally && IsGrounded() && !isDashing && !isFlyingInput;
+
+        if (isMovingOnFoot)
+        {
+            AudioClip targetClip = isSprinting ? (Sprint != null ? Sprint : Walk) : Walk;
+            float targetPitch = (isSprinting && Sprint == null) ? 1.25f : 1.0f;
+            float targetVolume = isSprinting ? sprintVolume : walkVolume;
+
+            if (targetClip != null)
+            {
+                audioSource.volume = targetVolume;
+                audioSource.pitch = targetPitch;
+
+                if (audioSource.clip != targetClip || !audioSource.isPlaying)
+                {
+                    audioSource.clip = targetClip;
+                    audioSource.loop = true;
+                    audioSource.Play();
+                }
+            }
+            else
+            {
+                StopMovementAudio();
+            }
+        }
+        else
+        {
+            StopMovementAudio();
+        }
+    }
+
+    private void StopMovementAudio()
+    {
+        if (audioSource != null && audioSource.isPlaying && (audioSource.clip == Walk || audioSource.clip == Sprint))
+        {
+            audioSource.Stop();
+        }
+    }
+
+    public bool IsGrounded()
+    {
+        // 1. BoxCast check: check all solid layers (including Default layer 0 and stairs layer 6)
+        int mask = ~LayerMask.GetMask("Ignore Raycast", "UI");
+
+        if (PlayerCollider != null)
+        {
+            Bounds b = PlayerCollider.bounds;
+            Vector2 origin = new Vector2(b.center.x, b.min.y + 0.1f);
+            Vector2 size = new Vector2(Mathf.Max(0.1f, b.size.x * 0.7f), 0.1f);
+            int hitCount = Physics2D.BoxCastNonAlloc(origin, size, 0f, Vector2.down, groundHits, 0.3f, mask);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider2D col = groundHits[i].collider;
+                if (col != null && !col.isTrigger && col.transform != transform && !col.CompareTag("Enemy"))
+                {
+                    return true;
+                }
+            }
+        }
+
+        // 2. Physics check: if vertical velocity is near zero and player is not pressing fly, they are grounded
+        if (rb != null && Mathf.Abs(rb.linearVelocity.y) < 0.25f && !isFlyingInput)
+        {
+            return true;
+        }
+
+        return false;
     }
 }

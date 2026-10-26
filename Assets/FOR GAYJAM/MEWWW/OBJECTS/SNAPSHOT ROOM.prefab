@@ -212,8 +212,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &155437989067902854
 GameObject:
   m_ObjectHideFlags: 0
@@ -319,8 +319,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &227548226949532173
 GameObject:
   m_ObjectHideFlags: 0
@@ -428,8 +428,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 3716650432166073941}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &285462236685685794
@@ -630,8 +630,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 4538455714440973825}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &567660080461862897
@@ -5878,6 +5878,7 @@ MonoBehaviour:
   minRooms: 3
   maxRooms: 4
   CountDown: 3
+  SummonOnce: 0
   preventBlindedEntityOnStairRoom: 1
   delaySpawnIfBlockedByStair: 0
 --- !u!1 &939918526788910746
@@ -5987,8 +5988,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 5585234243892916169}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &957202950494181902
@@ -6382,6 +6383,8 @@ GameObject:
   - component: {fileID: 8609506742514403321}
   - component: {fileID: 8332313290693600035}
   - component: {fileID: 3908088712557593035}
+  - component: {fileID: 2300464331855925377}
+  - component: {fileID: 4522886112423056809}
   m_Layer: 0
   m_Name: "\u0E2A\u0E32\u0E22\u0E44\u0E1F_0"
   m_TagString: Untagged
@@ -6487,6 +6490,118 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!82 &2300464331855925377
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1355847540356798820}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &4522886112423056809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1355847540356798820}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 007809fa50182754c8c564124dd594f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlaySound
+  a: {fileID: 2300464331855925377}
+  sound: {fileID: 8300000, guid: 007ffc999e8790248b88999dd2eef8af, type: 3}
+  volume: 1
 --- !u!1 &1503350312895298029
 GameObject:
   m_ObjectHideFlags: 0
@@ -12035,8 +12150,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 4711547415102628278}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &1911170187463792763
@@ -12235,8 +12350,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &2128024822381827302
 GameObject:
   m_ObjectHideFlags: 0
@@ -12348,6 +12463,9 @@ MonoBehaviour:
   PlayerPos: {fileID: 0}
   animator: {fileID: 0}
   HideSpot: {fileID: 0}
+  a: {fileID: 0}
+  On: {fileID: 0}
+  Off: {fileID: 0}
 --- !u!95 &8467679918580930915
 Animator:
   serializedVersion: 7
@@ -12507,6 +12625,7 @@ GameObject:
   - component: {fileID: 1331560266215197521}
   - component: {fileID: 790900041418805100}
   - component: {fileID: 8257900159717080048}
+  - component: {fileID: 8282322939000217975}
   m_Layer: 0
   m_Name: Door
   m_TagString: Untagged
@@ -12733,6 +12852,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e952ab542e9c9c4f8199354e1795b90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Door
+  a: {fileID: 8282322939000217975}
+  open: {fileID: 8300000, guid: a6eeeb987834123478aced8bfb4ee268, type: 3}
   openMode: 0
   interactKey: 101
   needKey: 0
@@ -12786,6 +12907,103 @@ MonoBehaviour:
   disableColliderOnOpen: 1
   maxVerticalDistance: 2.5
   cleanPreviousRoomsOnOpen: 0
+--- !u!82 &8282322939000217975
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2377556451762357175}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &2441367808399299649
 GameObject:
   m_ObjectHideFlags: 0
@@ -12984,8 +13202,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 7298328973071202992}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &2559096737504418310
@@ -18116,8 +18334,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 545375441739672028}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &2793277370069552948
@@ -18225,8 +18443,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &2813854942465814512
 GameObject:
   m_ObjectHideFlags: 0
@@ -18408,8 +18626,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &2854995726199255917
 GameObject:
   m_ObjectHideFlags: 0
@@ -18517,8 +18735,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 1778542020020952388}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &2971029101299009654
@@ -18699,6 +18917,8 @@ GameObject:
   - component: {fileID: 7024841617292246590}
   - component: {fileID: 7909582975878277112}
   - component: {fileID: 5027225056638396485}
+  - component: {fileID: 4402027286759798830}
+  - component: {fileID: 2378987483833999272}
   m_Layer: 0
   m_Name: "\u0E2A\u0E32\u0E22\u0E44\u0E1F_0 (1)"
   m_TagString: Untagged
@@ -18804,6 +19024,118 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!82 &4402027286759798830
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3054198741255640330}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &2378987483833999272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3054198741255640330}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 007809fa50182754c8c564124dd594f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlaySound
+  a: {fileID: 2300464331855925377}
+  sound: {fileID: 8300000, guid: 007ffc999e8790248b88999dd2eef8af, type: 3}
+  volume: 1
 --- !u!1 &3086241018781440006
 GameObject:
   m_ObjectHideFlags: 0
@@ -18909,8 +19241,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &3087342946255958919
 GameObject:
   m_ObjectHideFlags: 0
@@ -19109,8 +19441,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 1471545137027645865}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &3356671803231028969
@@ -19221,6 +19553,8 @@ MonoBehaviour:
   normalroomchace: 100
   LastRoom: {fileID: 7601628479252114360, guid: 9722a9d5a5f43bb499b421607239c818, type: 3}
   spawnPoint: {fileID: 8428768771865888052}
+  chainCooldown: 0.5
+  spawnCooldown: 0.3
 --- !u!114 &8546209834872308536
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19233,6 +19567,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e952ab542e9c9c4f8199354e1795b90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Door
+  a: {fileID: 0}
+  open: {fileID: 0}
   openMode: 0
   interactKey: 101
   needKey: 0
@@ -19428,8 +19764,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 938884279608205127}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &3569704475731405901
@@ -19628,8 +19964,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &3700050042947155585
 GameObject:
   m_ObjectHideFlags: 0
@@ -19813,8 +20149,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 8864318363542866517}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &3822434675230208862
@@ -20067,8 +20403,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &4183900045152521610
 GameObject:
   m_ObjectHideFlags: 0
@@ -20252,8 +20588,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 6352761843524432046}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &4480567024059408722
@@ -20361,8 +20697,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &4577021688948470709
 GameObject:
   m_ObjectHideFlags: 0
@@ -20908,8 +21244,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &5041715464845817620
 GameObject:
   m_ObjectHideFlags: 0
@@ -21093,8 +21429,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 422604101383336411}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &5250668129233504368
@@ -21202,8 +21538,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &5333330737756249404
 GameObject:
   m_ObjectHideFlags: 0
@@ -21311,8 +21647,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 4193453561453331928}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &5447111940413961787
@@ -21718,8 +22054,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &5752187161227333766
 GameObject:
   m_ObjectHideFlags: 0
@@ -22061,8 +22397,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &6151329925695819764
 GameObject:
   m_ObjectHideFlags: 0
@@ -22261,8 +22597,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 6211328072909738406}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &6309871367115134263
@@ -22448,8 +22784,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 649827600938806279}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &6495581752880029126
@@ -22559,8 +22895,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 8190288791483850018}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &6750225188338915499
@@ -22828,8 +23164,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &6904038549823652320
 GameObject:
   m_ObjectHideFlags: 0
@@ -22937,8 +23273,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 4885670011458553913}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &7037745968090650522
@@ -23305,8 +23641,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &7542203827327040417
 GameObject:
   m_ObjectHideFlags: 0
@@ -23600,8 +23936,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &7943662760424047683
 GameObject:
   m_ObjectHideFlags: 0
@@ -23707,8 +24043,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &8121804163250763901
 GameObject:
   m_ObjectHideFlags: 0
@@ -29076,8 +29412,8 @@ MonoBehaviour:
   playerTarget: {fileID: 0}
   area: {fileID: 1242560611287999027}
   followSpeed: 3
-  stopDistance: 1
-  minDistance: 1
+  stopDistance: 0.01
+  minDistance: 0.01
   separationStrength: 5
   eyeRadiusPadding: 0.3
 --- !u!1 &8453883716320675909
@@ -29861,8 +30197,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c21868bf77b7d0043bbcee041213e05f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EYESAREA
-  areaSize: {x: 1.35, y: 0.29}
-  areaOffset: {x: 0, y: 0.19}
+  areaSize: {x: 1.11, y: 0.5}
+  areaOffset: {x: 0, y: 0.26}
 --- !u!1 &9036997729790712215
 GameObject:
   m_ObjectHideFlags: 0

@@ -5,6 +5,10 @@ using UnityEngine.SceneManagement;
 
 public class Door : MonoBehaviour
 {
+
+    public AudioSource a;
+    public AudioClip open;
+  
     public enum OpenMode { OnTouch, OnKeyPress, Both }
 
     [Header("Open Mode")]
@@ -342,6 +346,10 @@ public class Door : MonoBehaviour
         {
             animator.Play("Open", -1, 0f);
         }
+        else
+        {
+            PlayOpenSound();
+        }
 
         Collider2D[] colliders = GetComponentsInChildren<Collider2D>(true);
 
@@ -377,6 +385,37 @@ public class Door : MonoBehaviour
             AnomalyCheck.instance.CleanAllAnomaly();
         }
     }
+    private float lastOpenSoundTime = -1f;
+
+    public void PlayOpenSound()
+    {
+        if (Time.time - lastOpenSoundTime < 0.2f) return;
+        lastOpenSoundTime = Time.time;
+
+        if (a == null)
+        {
+            a = GetComponent<AudioSource>();
+            if (a == null) a = GetComponentInChildren<AudioSource>();
+            if (a == null) a = gameObject.AddComponent<AudioSource>();
+        }
+        if (a != null)
+        {
+            a.playOnAwake = false;
+            a.spatialBlend = 0f; // 2D playback so camera distance doesn't mute it
+            
+#if UNITY_EDITOR
+            if (open == null)
+            {
+                open = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/MEWWW/AUDIOOOO/door open.wav");
+            }
+#endif
+            if (open != null)
+            {
+                a.PlayOneShot(open);
+            }
+        }
+    }
+ 
 
     public void UnlockDoor()
     {

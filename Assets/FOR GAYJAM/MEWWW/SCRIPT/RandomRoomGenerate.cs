@@ -23,8 +23,21 @@ public class RandomRoomGenerate : MonoBehaviour
     public GameObject LastRoom;
     public Transform spawnPoint;
 
+    [Header("Spawn & Chain Prevention")]
+    [Tooltip("Global cooldown (seconds) before ANY room generator can spawn a new room")]
+    public float chainCooldown = 0.5f;
+    [Tooltip("A newly instantiated room generator cannot trigger for this many seconds after spawning")]
+    public float spawnCooldown = 0.3f;
+
+    private static float lastGlobalRoomGeneratedTime = -999f;
+    private float spawnTime;
     private RoomCounter roomCounter;
     private bool hasTriggered = false;
+
+    void Awake()
+    {
+        spawnTime = Time.time;
+    }
 
     void Start()
     {
@@ -38,7 +51,17 @@ public class RandomRoomGenerate : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        // NOTE: Unity still sends OnTriggerEnter2D to DISABLED scripts, so check 'enabled' manually
+        HandleTrigger(other);
+    }
+
+    void OnTriggerStay2D(Collider2D other)
+    {
+        HandleTrigger(other);
+    }
+
+    private void HandleTrigger(Collider2D other)
+    {
+        // NOTE: Unity still sends trigger messages to DISABLED scripts, so check 'enabled' manually
         if (!enabled || hasTriggered) return;
 
         if (other.CompareTag("Player"))
@@ -66,7 +89,20 @@ public class RandomRoomGenerate : MonoBehaviour
         if (spawnPoint == null)
             return false;
 
+        // Prevent newly spawned rooms from triggering immediately on spawn (e.g. if spawnPoint overlaps player collider)
+        if (Time.time - spawnTime < spawnCooldown)
+        {
+            return false;
+        }
+
+        // Prevent rapid chain room generation (back-to-back spawns within cooldown)
+        if (Time.time - lastGlobalRoomGeneratedTime < chainCooldown)
+        {
+            return false;
+        }
+
         hasTriggered = true;
+        lastGlobalRoomGeneratedTime = Time.time;
         SpawnNextRoom();
         return true;
     }
