@@ -21,15 +21,39 @@ public class SummonTheEntityByRandom : MonoBehaviour
     [Tooltip("If true and BlindedEntity was blocked by a stair room with no other entity to spawn, delay the spawn to the room after rather than resetting full countdown")]
     public bool delaySpawnIfBlockedByStair = false;
 
+    private int lastDecreaseFrame = -1;
+    private bool initialized = false;
+
+    void Awake()
+    {
+        // Init in Awake (not Start) so CountDown is never 0 when something decreases it early
+        InitCountdown();
+    }
+
     void Start()
     {
+        InitCountdown();
+    }
+
+    private void InitCountdown()
+    {
+        if (initialized) return;
+        initialized = true;
         RollChance();
         ResetCountdown();
     }
 
     public void DecreaseCountDown()
     {
+        InitCountdown();
+
+        // Ignore duplicate calls in the same frame (door event + trigger + room generate)
+        if (lastDecreaseFrame == Time.frameCount) return;
+        lastDecreaseFrame = Time.frameCount;
+
         CountDown--;
+        Debug.Log($"[SummonTheEntityByRandom] CountDown -> {CountDown}");
+
         if (CountDown <= 0)
         {
             bool spawned = Spawn();
@@ -138,6 +162,6 @@ public class SummonTheEntityByRandom : MonoBehaviour
     private void ResetCountdown()
     {
         // Random.Range with integers is max-exclusive, so add 1
-        CountDown = Random.Range(minRooms, maxRooms + 1);
+        CountDown = Mathf.Max(1, Random.Range(minRooms, maxRooms + 1));
     }
 }

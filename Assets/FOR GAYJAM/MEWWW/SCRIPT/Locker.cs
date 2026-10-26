@@ -5,6 +5,7 @@ public class Locker : MonoBehaviour
     public Vector3 LockerUseRange = new Vector3(2f, 2f, 2f);
     public Transform PlayerPos;
     public Animator animator;
+    public Transform HideSpot;
 
     private Hided hided;
     private bool isPlayerInsideThisLocker = false;
@@ -72,7 +73,7 @@ public class Locker : MonoBehaviour
         isPlayerInsideThisLocker = true;
 
         // Snap player position to locker
-        PlayerPos.position = transform.position;
+        PlayerPos.position = HideSpot.position;
 
         if (playerMovement != null)
         {

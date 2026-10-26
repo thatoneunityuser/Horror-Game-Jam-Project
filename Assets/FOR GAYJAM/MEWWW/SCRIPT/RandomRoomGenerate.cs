@@ -38,19 +38,41 @@ public class RandomRoomGenerate : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (!hasTriggered && other.CompareTag("Player"))
+        // NOTE: Unity still sends OnTriggerEnter2D to DISABLED scripts, so check 'enabled' manually
+        if (!enabled || hasTriggered) return;
+
+        if (other.CompareTag("Player"))
         {
-            hasTriggered = true;
-            GenerateRoom();
-            Destroy(gameObject);
+            if (TryGenerateRoom())
+            {
+                Destroy(gameObject);
+            }
         }
     }
 
+    /// <summary>
+    /// Generates the next room. Runs ONLY ONCE per instance, no matter how many times
+    /// it is called (door onOpen event, trigger, etc.).
+    /// </summary>
     public void GenerateRoom()
     {
-        if (spawnPoint == null)
-            return;
+        TryGenerateRoom();
+    }
 
+    private bool TryGenerateRoom()
+    {
+        if (hasTriggered) return false;
+
+        if (spawnPoint == null)
+            return false;
+
+        hasTriggered = true;
+        SpawnNextRoom();
+        return true;
+    }
+
+    private void SpawnNextRoom()
+    {
         if (roomCounter == null)
         {
             roomCounter = RoomCounter.instance != null ? RoomCounter.instance : FindObjectOfType<RoomCounter>();

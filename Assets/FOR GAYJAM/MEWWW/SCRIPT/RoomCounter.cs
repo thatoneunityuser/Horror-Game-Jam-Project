@@ -10,9 +10,12 @@ public class RoomCounter : MonoBehaviour
     public int staireveryXroom = 5;
     public int generatedRoomCount = 0;
     public int PassedRoomCount = 0;
+    public int StairRoomCounter = 0;
 
     [Header("Entity Spawner")]
     public SummonTheEntityByRandom entitySpawner;
+    [Tooltip("If true, every generated room ALSO decreases the entity countdown. Leave OFF when using CooldownDecreaser, otherwise one room counts 2x.")]
+    public bool decreaseCountdownOnRoomGenerate = false;
 
     [Header("Event / Forced Rooms")]
     [Tooltip("Event rooms that will force spawn in sequential order by index")]
@@ -28,8 +31,8 @@ public class RoomCounter : MonoBehaviour
     [Tooltip("Alternative prefab for the first forced event room")]
     public GameObject alternateFirstEventRoom;
 
-    private List<GameObject> currentRooms = new List<GameObject>();
-    private List<GameObject> PreviousRooms = new List<GameObject>();
+    public List<GameObject> currentRooms = new List<GameObject>();
+    public List<GameObject> PreviousRooms = new List<GameObject>();
 
     void Awake()
     {
@@ -90,11 +93,15 @@ public class RoomCounter : MonoBehaviour
         // Check if THIS newly generated room is a stair room
         latestGeneratedRoomIsStair = (room.GetComponentInChildren<StairColliderLogic>() != null ||
                                       room.name.ToLower().Contains("stair"));
+        if(latestGeneratedRoomIsStair)
+        {
+            StairRoomCounter++;
+        }
 
         Debug.Log($"[RoomCounter] Added room '{room.name}'. Active rooms: {generatedRoomCount}/{maxRooms}. IsStair: {latestGeneratedRoomIsStair}");
 
-        // Optional: decrease entity countdown if entitySpawner is linked directly
-        if (entitySpawner != null)
+        // Optional: only when enabled, otherwise CooldownDecreaser handles the countdown
+        if (decreaseCountdownOnRoomGenerate && entitySpawner != null)
         {
             entitySpawner.DecreaseCountDown();
         }

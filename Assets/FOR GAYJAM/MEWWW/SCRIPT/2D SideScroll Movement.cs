@@ -15,6 +15,9 @@ public class SideScrollMovement : MonoBehaviour
     public float stamina = 100.0f;
     public float staminaDrainRate = 10.0f;
     public float staminaRegenRate = 5.0f;
+    [Tooltip("If stamina hits 0, you cannot sprint until stamina recovers back to this threshold")]
+    public float minStaminaToSprintAfterExhaustion = 20.0f;
+    [HideInInspector] public bool isExhausted = false;
 
     [Header("Walk To Stair")]
     public bool canWalkUpStair = true;
@@ -131,17 +134,30 @@ public class SideScrollMovement : MonoBehaviour
         // ── Input ─────────────────────────────────────────────────────────────
         moveInput = Input.GetAxisRaw("Horizontal"); // -1, 0, or 1
 
-        // ── Sprint ────────────────────────────────────────────────────────────
-        bool isSprinting = Input.GetKey(KeyCode.LeftShift) && moveInput != 0f && stamina > 0f;
+        // ── Sprint & Stamina ──────────────────────────────────────────────────
+        // If stamina reaches 0, player becomes exhausted and cannot sprint until stamina >= 20
+        if (stamina <= 0f)
+        {
+            isExhausted = true;
+        }
+        else if (isExhausted && stamina >= minStaminaToSprintAfterExhaustion)
+        {
+            isExhausted = false;
+        }
+
+        bool wantsToSprint = Input.GetKey(KeyCode.LeftShift) && moveInput != 0f;
+        bool isSprinting = wantsToSprint && !isExhausted && stamina > 0f;
         float cappedSpeed = maxSpeed;
 
         if (isSprinting)
         {
             cappedSpeed = maxSpeed * sprintMultiplier;
             stamina -= staminaDrainRate * Time.deltaTime;
+            // Regen is completely disabled while stamina is actively in use
         }
-        else
+        else if (!isDashing)
         {
+            // Only regenerate stamina when stamina is not in use (not sprinting, not dashing)
             stamina += staminaRegenRate * Time.deltaTime;
         }
         stamina = Mathf.Clamp(stamina, 0, maxStamina);

@@ -211,6 +211,13 @@ MonoBehaviour:
   Speed: 30
   lifetime: 5
   IsReversal: 1
+  audioSource: {fileID: -578560163753325114}
+  panDistance: 15
+  invertPan: 0
+  useDistanceVolume: 1
+  maxAudioDistance: 25
+  maxVolume: 0.8
+  minVolume: 0.05
 --- !u!82 &-578560163753325114
 AudioSource:
   m_ObjectHideFlags: 0
@@ -235,7 +242,7 @@ AudioSource:
   MinDistance: 5
   MaxDistance: 90
   Pan2D: 0
-  rolloffMode: 2
+  rolloffMode: 0
   BypassEffects: 0
   BypassListenerEffects: 0
   BypassReverbZones: 0

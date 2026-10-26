@@ -21,12 +21,14 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: EYES
-  m_Shader: {fileID: 4800000, guid: 8a89c23e874b7eb47b678ca216909b68, type: 3}
+  m_Shader: {fileID: 4800000, guid: c834edc2d3d7615459017395b1313548, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
+  m_ValidKeywords: []
+  m_InvalidKeywords:
   - PIXELSNAP_ON
-  m_InvalidKeywords: []
+  - _CLIPTOMASK_ON
+  - _SHOWSPRITE_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 1
@@ -38,9 +40,25 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _AlphaTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EyeTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: 4072c70777a233c4f88991c54368ab08, type: 3}
         m_Scale: {x: 0.5, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MaskTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SampleTexture2D_8e4f66686b1d46e1be23956f5db617ae_Texture_1_Texture2D:
         m_Texture: {fileID: 2800000, guid: 4a847fa535c30e64697cb772c7fbda36, type: 3}
@@ -61,19 +79,39 @@ Material:
     m_Ints: []
     m_Floats:
     - PixelSnap: 1
+    - _AngleOffset: 2
+    - _BlinkSpeed: 0.3
     - _CellDensity: 15.8
+    - _ClipToMask: 1
+    - _Coverage: 0.6
+    - _Density: 18.4
+    - _EdgeWidth: 0.05
+    - _EnableExternalAlpha: 0
+    - _EyeGlow: 0
     - _EyeGlowIntensity: 0
-    - _EyeScale: 0.5
+    - _EyeScale: 0.77
     - _GlowIntensity: 0
+    - _Jitter: 0.6
+    - _MaskThreshold: 0.5
     - _QueueControl: 0
     - _QueueOffset: 0
+    - _RandomRotation: 15
+    - _ScaleMax: 0.8
+    - _ScaleMin: 0.4
+    - _Seed: 0
+    - _ShowSprite: 1
     - _Speed: 5
     - _VoronoiScale: 5
+    - _VoronoiSpeed: 0.5
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EdgeColor: {r: 0, g: 0, b: 0, a: 0}
+    - _EyeColor: {r: 1, g: 0, b: 0, a: 1}
     - _EyeGlowColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Flip: {r: 1, g: 1, b: 1, a: 1}
     - _GlowColor: {r: 1, g: 0, b: 0, a: 1}
     - _PupilOffset: {r: 0, g: 0, b: 0, a: 0}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
     - _TintColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

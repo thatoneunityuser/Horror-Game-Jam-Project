@@ -270,33 +270,7 @@ public class Door : MonoBehaviour
         }
     }
 
-    void OnTriggerStay2D(Collider2D other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            playerTransform = other.transform;
-            if (IsPlayerAtDoorLevel(other.transform))
-            {
-                playerInRange = true;
-                if (!isOpened && (openMode == OpenMode.OnTouch || openMode == OpenMode.Both))
-                {
-                    TryOpenDoor();
-                }
-            }
-            else
-            {
-                playerInRange = false;
-            }
-        }
-    }
 
-    void OnTriggerExit2D(Collider2D other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            playerInRange = false;
-        }
-    }
 
     public void TryOpenDoor()
     {

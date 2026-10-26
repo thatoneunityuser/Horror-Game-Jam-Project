@@ -225,6 +225,10 @@ public class BlindedEntity : MonoBehaviour
         {
             // Move towards the sound/player until stop range
             FacePlayer();
+            if(IsReversal)
+            {
+                spriteRenderer.flipX = false;
+            }
             float dirX = GetDirectionToPlayerX();
             Vector3 moveDir = new Vector3(dirX, 0f, 0f);
 
@@ -233,6 +237,7 @@ public class BlindedEntity : MonoBehaviour
             if (animator != null && !animator.GetBool("IsMoving"))
             {
                 animator.SetBool("IsMoving", true);
+               
             }
         }
     }
@@ -308,6 +313,10 @@ public class BlindedEntity : MonoBehaviour
         isChecking = true;
         yield return new WaitForSeconds(5f);
         isChecking = false;
+         if(IsReversal)
+                {
+                    spriteRenderer.flipX = true;
+                }
         currentState = State.RunAway;
     }
 
