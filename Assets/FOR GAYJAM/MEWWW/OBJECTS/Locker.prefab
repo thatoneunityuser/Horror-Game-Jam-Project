@@ -244,7 +244,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -6.8800006, y: -2.3516, z: 0}
-  m_LocalScale: {x: 0.8000001, y: 0.8000001, z: 0.5869467}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.36684167}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7002326551399734436}
@@ -327,6 +327,7 @@ MonoBehaviour:
   PlayerPos: {fileID: 0}
   animator: {fileID: 0}
   HideSpot: {fileID: 1185491238028503742}
+  a: {fileID: 0}
   On: {fileID: 8300000, guid: 825041b06cfa1c547a0a8c74bc23b1dd, type: 3}
   Off: {fileID: 8300000, guid: 4d161cbd37bbd8b4487a5f619bb4bdf4, type: 3}
 --- !u!95 &4325843631108678647
