@@ -1,5 +1,40 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2788267860451850011
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2806183501701646509}
+  m_Layer: 0
+  m_Name: GhostWarning_Container
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2806183501701646509
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2788267860451850011}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3878284138831871221}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &4733552407546802841
 GameObject:
   m_ObjectHideFlags: 0
@@ -66,7 +101,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 7535562274419473363, guid: 8d89042bdc6551e4bb6294afc7d21d6c, type: 3}
+  m_Sprite: {fileID: 21300000, guid: ea9b51c37aeb1244a9fe8202b3748862, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -89,8 +124,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlashlightUI
   flashlightIcon: {fileID: 8572045114588246354}
-  iconOnSprite: {fileID: 7535562274419473363, guid: 8d89042bdc6551e4bb6294afc7d21d6c, type: 3}
-  iconOffSprite: {fileID: 6027073587653099156, guid: ea9b51c37aeb1244a9fe8202b3748862, type: 3}
+  iconOnSprite: {fileID: 21300000, guid: 8d89042bdc6551e4bb6294afc7d21d6c, type: 3}
+  iconOffSprite: {fileID: 21300000, guid: ea9b51c37aeb1244a9fe8202b3748862, type: 3}
   onColor: {r: 1, g: 1, b: 1, a: 1}
   offColor: {r: 0.6, g: 0.6, b: 0.65, a: 0.35}
   targetLightObject: {fileID: 0}
@@ -257,6 +292,7 @@ GameObject:
   - component: {fileID: 8672746635939315639}
   - component: {fileID: 4590031762393910774}
   - component: {fileID: 507477315377881468}
+  - component: {fileID: 4555166574460700331}
   m_Layer: 0
   m_Name: Game UI
   m_TagString: Untagged
@@ -278,6 +314,7 @@ RectTransform:
   m_Children:
   - {fileID: 5960698985834615311}
   - {fileID: 1012481638868001017}
+  - {fileID: 2806183501701646509}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -362,6 +399,44 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameplayHUDManager
   roomCounterUI: {fileID: 3497254603482495883}
   flashlightUI: {fileID: 3646909043247585592}
+  ghostWarningManager: {fileID: 4555166574460700331}
+--- !u!114 &4555166574460700331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5725137293861166132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9d892fe7e74b1e49b7f2e1b414cfc8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GhostWarningManager
+  autoTrackRushEntity: 1
+  trackedGhostPrefabs: []
+  trackedTags:
+  - Enemy
+  trackedNameKeywords:
+  - rush
+  - johnny
+  arrowSprite: {fileID: 21300000, guid: 5937107297e64177b960a5d430489cf2, type: 3}
+  defaultArrowColor: {r: 1, g: 1, b: 1, a: 1}
+  arrowSize: {x: 56, y: 56}
+  horizontalMargin: 45
+  verticalMargin: 80
+  trackVerticalPosition: 1
+  pointingDirection: 0
+  bobSpeed: 7.5
+  bobDistance: 22
+  enablePulseScale: 1
+  pulseSpeed: 6
+  pulseMagnitude: 0.12
+  hideWhenOnScreen: 0
+  fadeSpeed: 8
+  scanInterval: 0.5
+  targetCamera: {fileID: 0}
+  playerTransform: {fileID: 0}
+  arrowContainer: {fileID: 2806183501701646509}
 --- !u!1 &6715526893157580300
 GameObject:
   m_ObjectHideFlags: 0

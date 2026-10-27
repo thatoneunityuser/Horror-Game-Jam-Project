@@ -48,7 +48,7 @@ Canvas:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4486405979191712511}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
   m_RenderMode: 0
   m_Camera: {fileID: 0}
@@ -71,7 +71,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4486405979191712511}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
@@ -94,7 +94,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4486405979191712511}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
   m_Name: 
@@ -111,13 +111,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4486405979191712511}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 192460f0b614ac44f92d7b597f522a75, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameplayHUDManager
   roomCounterUI: {fileID: 1036475362169496438}
   flashlightUI: {fileID: 8341685747986086625}
+  ghostWarningManager: {fileID: 0}
 --- !u!1 &5118066599388278859
 GameObject:
   m_ObjectHideFlags: 0
@@ -162,7 +163,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5118066599388278859}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bef954f2744f0a74c835359a5a33f0e1, type: 3}
   m_Name: 
@@ -240,7 +241,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7610814523299776221}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -253,7 +254,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 7535562274419473363, guid: 8d89042bdc6551e4bb6294afc7d21d6c, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 8d89042bdc6551e4bb6294afc7d21d6c, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -270,14 +271,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7610814523299776221}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 209bc03f4409f294ba4c9cd23311e6ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlashlightUI
   flashlightIcon: {fileID: 5474243902917796601}
-  iconOnSprite: {fileID: 7535562274419473363, guid: 8d89042bdc6551e4bb6294afc7d21d6c, type: 3}
-  iconOffSprite: {fileID: 6027073587653099156, guid: ea9b51c37aeb1244a9fe8202b3748862, type: 3}
+  iconOnSprite: {fileID: 21300000, guid: 8d89042bdc6551e4bb6294afc7d21d6c, type: 3}
+  iconOffSprite: {fileID: 21300000, guid: ea9b51c37aeb1244a9fe8202b3748862, type: 3}
   onColor: {r: 1, g: 1, b: 1, a: 1}
   offColor: {r: 0.6, g: 0.6, b: 0.65, a: 0.35}
   targetLightObject: {fileID: 0}
@@ -346,7 +347,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8571584452841661541}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
@@ -362,7 +363,7 @@ MonoBehaviour:
   m_text: 1
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 07a112b980fad65449b67b43ffa80fab, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 6851601448697946754, guid: 07a112b980fad65449b67b43ffa80fab, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

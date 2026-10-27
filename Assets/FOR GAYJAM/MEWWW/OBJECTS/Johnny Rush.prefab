@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 5297359956136700052}
   - component: {fileID: -578560163753325114}
   - component: {fileID: 7060135354197990188}
+  - component: {fileID: 4817180421076392382}
   m_Layer: 0
   m_Name: Johnny Rush
   m_TagString: Untagged
@@ -342,6 +343,27 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &4817180421076392382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6267208673490482152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19a5dbe5bd389df4e895c2af613dbf7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GhostWarningTarget
+  arrowColor: {r: 1, g: 1, b: 1, a: 1}
+  customArrowSprite: {fileID: 0}
+  arrowScale: {x: 1, y: 1}
+  maxWarningDistance: 0
+  hideWhenOnScreen: 0
+  customBobSpeed: -1
+  customBobDistance: -1
+  warningSfx: {fileID: 0}
+  warningSfxVolume: 0.8
 --- !u!1 &6503147034084879917
 GameObject:
   m_ObjectHideFlags: 0

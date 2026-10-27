@@ -119,7 +119,24 @@ namespace HorrorJam.UI.Editor
             flashlightUI.isFlashlightOn = true;
             hudManager.flashlightUI = flashlightUI;
 
-            // 4. Save as Prefab
+            // 4. Ghost Warning Indicator System (ลูกศรเตือนผีขอบจอ)
+            GameObject warningContainer = new GameObject("GhostWarning_Container");
+            warningContainer.transform.SetParent(rootGo.transform, false);
+
+            RectTransform warnRect = warningContainer.AddComponent<RectTransform>();
+            warnRect.anchorMin = Vector2.zero;
+            warnRect.anchorMax = Vector2.one;
+            warnRect.sizeDelta = Vector2.zero;
+            warnRect.anchoredPosition = Vector2.zero;
+
+            GhostWarningManager warningManager = rootGo.AddComponent<GhostWarningManager>();
+            warningManager.arrowContainer = warnRect;
+            warningManager.arrowSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/FOR GAYJAM/NON/Non import/Sprites/GhostArrowIndicator.png");
+            warningManager.autoTrackRushEntity = true;
+            warningManager.defaultArrowColor = Color.white;
+            hudManager.ghostWarningManager = warningManager;
+
+            // 5. Save as Prefab
             PrefabUtility.SaveAsPrefabAssetAndConnect(rootGo, PREFAB_PATH, InteractionMode.AutomatedAction);
             Debug.Log($"[GameplayHUDBuilder] Saved Prefab successfully to {PREFAB_PATH}!");
 

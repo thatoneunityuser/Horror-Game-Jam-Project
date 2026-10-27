@@ -12,6 +12,7 @@ public class GameplayHUDManager : MonoBehaviour
     [Header("=== HUD Components ===")]
     public RoomCounterUI roomCounterUI;
     public FlashlightUI flashlightUI;
+    public GhostWarningManager ghostWarningManager;
 
     void Awake()
     {
@@ -27,6 +28,8 @@ public class GameplayHUDManager : MonoBehaviour
 
         if (roomCounterUI == null) roomCounterUI = GetComponentInChildren<RoomCounterUI>();
         if (flashlightUI == null) flashlightUI = GetComponentInChildren<FlashlightUI>();
+        if (ghostWarningManager == null) ghostWarningManager = GetComponentInChildren<GhostWarningManager>();
+        if (ghostWarningManager == null) ghostWarningManager = FindObjectOfType<GhostWarningManager>();
     }
 
     #region Static Helper Methods (เข้าถึงง่ายจากทุกที่)
