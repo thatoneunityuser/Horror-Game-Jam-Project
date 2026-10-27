@@ -229,7 +229,7 @@ GameObject:
   - component: {fileID: 4127203494684590153}
   m_Layer: 0
   m_Name: Locker
-  m_TagString: Untagged
+  m_TagString: Locker
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -323,7 +323,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c639c516f9578940847e2a43570ce67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Locker
-  LockerUseRange: {x: 4.43, y: 6.06, z: 2}
+  LockerUseRange: {x: 2.77, y: 3.88, z: 2}
   PlayerPos: {fileID: 0}
   animator: {fileID: 0}
   HideSpot: {fileID: 1185491238028503742}
@@ -476,7 +476,7 @@ MonoBehaviour:
   interactionPriority: 0
   detectionMode: 0
   playerTag: Player
-  interactionDistance: 2.5
+  interactionDistance: 2.11
   useVerticalDistanceLimit: 1
   maxVerticalDistance: 2.5
   promptText: E

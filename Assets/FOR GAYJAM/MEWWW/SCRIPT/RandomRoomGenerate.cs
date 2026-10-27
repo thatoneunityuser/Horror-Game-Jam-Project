@@ -8,6 +8,7 @@ public class RandomRoomGenerate : MonoBehaviour
     public GameObject[] snapshotroomprefabs;
     public GameObject[] stairroomprefab;
     public GameObject[] EventRooms1;
+    public GameObject[] EventRooms2;
     
     [Header("First Event Room Override")]
     [Tooltip("If true, changes ONLY the first forced event room (room 30) spawned by this trigger")]

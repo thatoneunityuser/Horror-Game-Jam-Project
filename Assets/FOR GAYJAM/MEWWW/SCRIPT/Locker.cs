@@ -14,6 +14,7 @@ public class Locker : MonoBehaviour
 
     private Hided hided;
     private bool isPlayerInsideThisLocker = false;
+    public bool IsPlayerInsideThisLocker => isPlayerInsideThisLocker;
     private SideScrollMovement playerMovement;
     private Rigidbody2D rb;
 

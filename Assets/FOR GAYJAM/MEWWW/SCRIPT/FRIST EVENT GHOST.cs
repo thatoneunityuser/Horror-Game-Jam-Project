@@ -164,6 +164,15 @@ public class FRISTEVENTGHOST : MonoBehaviour
     {
         // Absolutely no chasing player when dead or idle
         if (died || currentState == GhostState.DEAD || currentState == GhostState.IDLE) return;
+
+        // When player is dying: stop tracking player and keep moving forward
+        if (isKillingPlayer)
+        {
+            Vector2 forwardDir = lastMoveDirection.sqrMagnitude > 0.001f ? lastMoveDirection : Vector2.right;
+            transform.position += (Vector3)(forwardDir * currentSpeed * Time.fixedDeltaTime);
+            return;
+        }
+
         if (playerTransform == null) return;
 
         // Track last moving direction so slide knows which way ghost was lunging
@@ -234,10 +243,54 @@ public class FRISTEVENTGHOST : MonoBehaviour
         }
         else
         {
-            // Player caught while not hiding -> Restart scene
-            Debug.Log("[FRISTEVENTGHOST] Player caught while NOT hiding! Resetting scene...");
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            // Player caught while not hiding -> Play death routine and restart scene
+            Debug.Log("[FRISTEVENTGHOST] Player caught while NOT hiding! Starting death routine...");
+            StartCoroutine(PlayerDieCoroutine());
         }
+    }
+
+    private bool isKillingPlayer = false;
+
+    IEnumerator PlayerDieCoroutine()
+    {
+        if (isKillingPlayer) yield break;
+        isKillingPlayer = true;
+
+        // Stop tracking player
+        playerTransform = null;
+
+        // If on jump state, back to chase state and restore chase speed
+        currentState = GhostState.CHASE;
+        currentSpeed = chaseSpeed;
+
+        // Disable colliders so it passes smoothly without re-triggering
+        if (ghostCollider != null) ghostCollider.enabled = false;
+        Collider2D[] allCols = GetComponentsInChildren<Collider2D>();
+        foreach (var c in allCols) if (c != null) c.enabled = false;
+
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            Animator anim = player.GetComponent<Animator>();
+            if (anim == null) anim = player.GetComponentInChildren<Animator>();
+            if (anim != null)
+            {
+                if (anim.HasState(0, Animator.StringToHash("Die"))) anim.Play("Die");
+                else if (anim.HasState(0, Animator.StringToHash("Dead"))) anim.Play("Dead");
+                else anim.Play("Die");
+            }
+
+            SideScrollMovement movement = player.GetComponent<SideScrollMovement>();
+            if (movement != null) movement.enabled = false;
+
+            Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+            if (playerRb != null) playerRb.linearVelocity = Vector2.zero;
+        }
+
+        if (hideStatus != null) hideStatus.enabled = false;
+
+        yield return new WaitForSeconds(2f);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     [ContextMenu("Force Kill Ghost")]

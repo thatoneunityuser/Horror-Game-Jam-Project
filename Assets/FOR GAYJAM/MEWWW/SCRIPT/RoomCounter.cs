@@ -17,13 +17,21 @@ public class RoomCounter : MonoBehaviour
     [Tooltip("If true, every generated room ALSO decreases the entity countdown. Leave OFF when using CooldownDecreaser, otherwise one room counts 2x.")]
     public bool decreaseCountdownOnRoomGenerate = false;
 
-    [Header("Event / Forced Rooms")]
+    [Header("Event 1 / Forced Rooms")]
     [Tooltip("Event rooms that will force spawn in sequential order by index")]
     public GameObject[] EventRooms1;
     [Tooltip("Starting PassedRoomCount for event rooms (inclusive)")]
     public int eventStartRoom = 30;
     [Tooltip("Ending PassedRoomCount for event rooms (inclusive)")]
     public int eventEndRoom = 34;
+
+    [Header("Event 2 / Forced Rooms (Second Ghost Event)")]
+    [Tooltip("Event rooms for the second ghost event in sequential order")]
+    public GameObject[] EventRooms2;
+    [Tooltip("Starting PassedRoomCount for second event rooms (inclusive)")]
+    public int event2StartRoom = 45;
+    [Tooltip("Ending PassedRoomCount for second event rooms (inclusive)")]
+    public int event2EndRoom = 48;
 
     [Header("First Event Room Override")]
     [Tooltip("If true, changes ONLY the first forced event room (index 0 / room 30) to alternateFirstEventRoom")]
@@ -152,29 +160,52 @@ public class RoomCounter : MonoBehaviour
     // --- Forced Event Room Logic ---
     public bool HasForcedRoom()
     {
-        return EventRooms1 != null && EventRooms1.Length > 0 &&
-               PassedRoomCount >= eventStartRoom && PassedRoomCount <= eventEndRoom;
+        bool hasEvent1 = EventRooms1 != null && EventRooms1.Length > 0 &&
+                         PassedRoomCount >= eventStartRoom && PassedRoomCount <= eventEndRoom;
+        bool hasEvent2 = EventRooms2 != null && EventRooms2.Length > 0 &&
+                         PassedRoomCount >= event2StartRoom && PassedRoomCount <= event2EndRoom;
+        return hasEvent1 || hasEvent2;
     }
 
     public GameObject GetForcedRoomPrefab()
     {
         if (!HasForcedRoom()) return null;
 
-        int index = PassedRoomCount - eventStartRoom;
-
-        // ONLY the first room (index 0 / room 30) can be changed by the bool
-        if (index == 0 && changeFirstEventRoom && alternateFirstEventRoom != null)
+        // Event 1 check (rooms 30-34)
+        if (EventRooms1 != null && EventRooms1.Length > 0 &&
+            PassedRoomCount >= eventStartRoom && PassedRoomCount <= eventEndRoom)
         {
-            return alternateFirstEventRoom;
+            int index = PassedRoomCount - eventStartRoom;
+
+            // ONLY the first room (index 0 / room 30) can be changed by the bool
+            if (index == 0 && changeFirstEventRoom && alternateFirstEventRoom != null)
+            {
+                return alternateFirstEventRoom;
+            }
+
+            if (index >= 0 && index < EventRooms1.Length)
+            {
+                return EventRooms1[index];
+            }
+            else if (EventRooms1.Length > 0)
+            {
+                return EventRooms1[index % EventRooms1.Length];
+            }
         }
 
-        if (index >= 0 && index < EventRooms1.Length)
+        // Event 2 check (rooms 45-48)
+        if (EventRooms2 != null && EventRooms2.Length > 0 &&
+            PassedRoomCount >= event2StartRoom && PassedRoomCount <= event2EndRoom)
         {
-            return EventRooms1[index];
-        }
-        else if (EventRooms1.Length > 0)
-        {
-            return EventRooms1[index % EventRooms1.Length];
+            int index = PassedRoomCount - event2StartRoom;
+            if (index >= 0 && index < EventRooms2.Length)
+            {
+                return EventRooms2[index];
+            }
+            else if (EventRooms2.Length > 0)
+            {
+                return EventRooms2[index % EventRooms2.Length];
+            }
         }
 
         return null;
@@ -183,25 +214,27 @@ public class RoomCounter : MonoBehaviour
     public GameObject SpawnForcedRoom(Transform spawnPoint, GameObject customFirstRoom = null)
     {
         int currentCount = PassedRoomCount;
-        int eventIndex = currentCount - eventStartRoom;
+        bool isEvent1 = (currentCount >= eventStartRoom && currentCount <= eventEndRoom);
+        int eventIndex = isEvent1 ? (currentCount - eventStartRoom) : (currentCount - event2StartRoom);
+        string eventName = isEvent1 ? "Event 1" : "Event 2";
 
         GameObject forcedPrefab = GetForcedRoomPrefab();
 
         // If an explicit custom room was passed for the first event room (index 0)
-        if (eventIndex == 0 && customFirstRoom != null)
+        if (isEvent1 && eventIndex == 0 && customFirstRoom != null)
         {
             forcedPrefab = customFirstRoom;
         }
 
         if (forcedPrefab != null && spawnPoint != null)
         {
-            string overrideTag = (eventIndex == 0 && (changeFirstEventRoom || customFirstRoom != null))
+            string overrideTag = (isEvent1 && eventIndex == 0 && (changeFirstEventRoom || customFirstRoom != null))
                 ? " [First Room Changed/Overridden]"
                 : "";
 
             GameObject newRoom = Instantiate(forcedPrefab, spawnPoint.position, Quaternion.identity);
             GenerateRoom(newRoom);
-            Debug.Log($"[RoomCounter] Force-spawned Event Room [{eventIndex}]{overrideTag} ('{newRoom.name}') for room count #{currentCount}");
+            Debug.Log($"[RoomCounter] Force-spawned {eventName} Room [{eventIndex}]{overrideTag} ('{newRoom.name}') for room count #{currentCount}");
             return newRoom;
         }
         return null;
@@ -224,8 +257,10 @@ public class RoomCounter : MonoBehaviour
 
     public bool ShouldSpawnStairRoom()
     {
-        // Event rooms force-spawn from PassedRoomCount 30 to 34, so stair room is suppressed
-        if ((PassedRoomCount >= eventStartRoom && PassedRoomCount <= eventEndRoom) || HasForcedRoom()) return false;
+        // Event rooms force-spawn from PassedRoomCount 30 to 34 and 45 to 48, so stair room is suppressed
+        if ((PassedRoomCount >= eventStartRoom && PassedRoomCount <= eventEndRoom) ||
+            (PassedRoomCount >= event2StartRoom && PassedRoomCount <= event2EndRoom) ||
+            HasForcedRoom()) return false;
         if (staireveryXroom <= 0) return false;
         int nextRoomNumber = PassedRoomCount + 1;
         return nextRoomNumber % staireveryXroom == 0;

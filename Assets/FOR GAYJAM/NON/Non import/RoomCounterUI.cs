@@ -125,10 +125,7 @@ public class RoomCounterUI : MonoBehaviour
         SyncWithRoomCounter();
     }
 
-    void Update()
-    {
-        SyncWithRoomCounter();
-    }
+
 
     /// <summary>
     /// อัปเดตและซิงค์ตัวเลขห้องจาก RoomCounter ในฉากอัตโนมัติ

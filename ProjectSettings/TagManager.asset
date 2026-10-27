@@ -7,6 +7,9 @@ TagManager:
   - Enemy
   - Ground
   - Stair path
+  - PartrolSpot
+  - Locker
+  - PatrolSpot
   layers:
   - Default
   - TransparentFX
@@ -15,7 +18,7 @@ TagManager:
   - Water
   - UI
   - Stair Floor
-  - 
+  - PartrolSpot
   - 
   - 
   - 

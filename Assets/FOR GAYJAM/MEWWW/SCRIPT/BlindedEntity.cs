@@ -25,11 +25,6 @@ public class BlindedEntity : MonoBehaviour
     public bool IsReversal = false;
     private SpriteRenderer spriteRenderer;
 
-    [Header("Attack & Miss Tracking")]
-    public float attackDuration = 0.5f;
-    public float missRecoveryTime = 0.15f;
-    public float missChaseSpeedMultiplier = 2.5f;
-    public float missChaseDuration = 3f;
 
     [Header("Animator")]
     public Animator animator;
@@ -46,14 +41,14 @@ public class BlindedEntity : MonoBehaviour
 
     private SideScrollMovement playerMovement;
     private Hided playerHided;
+    private Animator PlayerAnimator;
 
     private bool hasPlayedDetectedSound = false;
     private bool isChecking = false;
     private bool isAttacking = false;
-    private bool isMissTracking = false;
     private bool attackHitEvaluated = false;
     private bool isPlayerHidingThatTime = false;
-    private float missTrackingTimer = 0f;
+    private float currentLifeTimer = 0f;
     private Coroutine checkingCoroutine;
     private Coroutine attackCoroutine;
     private Coroutine hideNoiseCoroutine;
@@ -70,7 +65,7 @@ public class BlindedEntity : MonoBehaviour
         {
             audioSource = GetComponent<AudioSource>();
         }
-        Destroy(gameObject, lifeTime);
+        currentLifeTimer = lifeTime;
 
         if (IsReversal)
         {
@@ -81,8 +76,23 @@ public class BlindedEntity : MonoBehaviour
     void Update()
     {
         CheckHideNoiseInput();
+        UpdateLifeTimer();
         UpdateState();
         UpdateAction();
+    }
+
+    void UpdateLifeTimer()
+    {
+        // Lifetime countdown only ticks down while running away.
+        // Paused while Suspicious (investigating) or Detected (chasing) so entity doesn't despawn mid-encounter!
+        if (currentState == State.RunAway)
+        {
+            currentLifeTimer -= Time.deltaTime;
+            if (currentLifeTimer <= 0f)
+            {
+                Destroy(gameObject);
+            }
+        }
     }
 
     void CheckHideNoiseInput()
@@ -113,6 +123,12 @@ public class BlindedEntity : MonoBehaviour
 
     void UpdateState()
     {
+        if (isKillingPlayer)
+        {
+            currentState = State.RunAway;
+            return;
+        }
+
         // 1. If already detected, it can NEVER return to RunAway or Suspicious state
         if (currentState == State.Detected)
         {
@@ -125,10 +141,11 @@ public class BlindedEntity : MonoBehaviour
         // Hidden players are stationary and silent inside lockers
         bool isPlayerMoving = playerMovement != null && playerMovement.isMoving && !isPlayerHidden;
         bool isPlayerHideNow = IsPlayerHideThatTime();
+        bool isPlayerCrawling = playerMovement != null && playerMovement.isCrawling;
 
         // 2. Detected takes highest priority:
         // Close range movement OR player enters/interacts with locker within locker range
-        if ((IsPlayerInMovementRange() && isPlayerMoving) || (IsPlayerInLockerRange() && isPlayerHidden && isPlayerHideNow))
+        if ((IsPlayerInMovementRange() && isPlayerMoving && !isPlayerCrawling) || (IsPlayerInLockerRange() && isPlayerHidden && isPlayerHideNow))
         {
             currentState = State.Detected;
 
@@ -151,7 +168,7 @@ public class BlindedEntity : MonoBehaviour
         }
 
         // 4. If in RunAway, check if player makes noise (Suspect Range + moving)
-        if (IsPlayerInSuspectRange() && isPlayerMoving)
+        if (IsPlayerInSuspectRange() && isPlayerMoving && !isPlayerCrawling)
         {
             currentState = State.Suspicious;
         }
@@ -249,16 +266,8 @@ public class BlindedEntity : MonoBehaviour
             PlayDetectedSound();
         }
 
-        // Update miss tracking timer
-        if (isMissTracking)
-        {
-            
-            missTrackingTimer -= Time.deltaTime;
-            if (missTrackingTimer <= 0f)
-            {
-                isMissTracking = false;
-            }
-        }
+      
+  
 
         // Don't slide while attacking
         if (isAttacking)
@@ -283,11 +292,11 @@ public class BlindedEntity : MonoBehaviour
         }
         else
         {
-            // Walk directly towards the player at chase speed (or miss tracking speed)
+            
             float dirX = GetDirectionToPlayerX();
             Vector3 moveDir = new Vector3(dirX, 0f, 0f);
-            float speedMultiplier = isMissTracking ? missChaseSpeedMultiplier : chaseSpeedMultiplier;
-            float chaseSpeed = runAwaySpeed * speedMultiplier;
+
+            float chaseSpeed = runAwaySpeed * chaseSpeedMultiplier;
 
             transform.position += moveDir * chaseSpeed * Time.deltaTime;
 
@@ -334,7 +343,7 @@ public class BlindedEntity : MonoBehaviour
             animator.Update(0f);
         }
 
-        yield return new WaitForSeconds(attackDuration);
+        yield return new WaitForSeconds(0.1f);
 
         // Fallback: If animation event did not trigger AttackPlayer(), evaluate here
         if (!attackHitEvaluated)
@@ -354,48 +363,6 @@ public class BlindedEntity : MonoBehaviour
         if (currentState == State.Detected && IsPlayerInAttackRange())
         {
             StartAttack();
-        }
-    }
-
-    void OnPunchMissed()
-    {
-        if (attackCoroutine != null)
-        {
-            StopCoroutine(attackCoroutine);
-            attackCoroutine = null;
-        }
-
-        // Keep track of the player aggressively after missing
-        isMissTracking = true;
-        missTrackingTimer = missChaseDuration;
-
-        attackCoroutine = StartCoroutine(MissRecoveryRoutine());
-    }
-
-    IEnumerator MissRecoveryRoutine()
-    {
-        isAttacking = true;
-        FacePlayer();
-
-        if (missRecoveryTime > 0f)
-        {
-            yield return new WaitForSeconds(missRecoveryTime);
-        }
-
-        isAttacking = false;
-        attackCoroutine = null;
-
-        // Keep punching down: If player is still in range after miss, immediately throw next punch!
-        if (currentState == State.Detected && IsPlayerInAttackRange())
-        {
-            StartAttack();
-        }
-        else
-        {
-            if (animator != null)
-            {
-                animator.SetBool("IsMoving", true);
-            }
         }
     }
 
@@ -468,18 +435,61 @@ public class BlindedEntity : MonoBehaviour
         return new Vector2(HitboxOffset.x * facing, HitboxOffset.y);
     }
 
+    private bool isKillingPlayer = false;
+
     public void AttackPlayer()
     {
-        attackHitEvaluated = true;
+        if (isKillingPlayer) return;
+        isKillingPlayer = true;
+        StartCoroutine(PlayerDieCoroutine());
+    }
 
-        if (IsPlayerInAttackRange())
+    IEnumerator PlayerDieCoroutine()
+    {
+        currentState = State.RunAway;
+        isAttacking = false;
+        if (animator != null)
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            animator.SetBool("IsMoving", true);
         }
-        else{
-            Debug.Log("Miss Attack - Tracking Player");
-            OnPunchMissed();
+
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            PlayerAnimator = player.GetComponent<Animator>();
+            if (PlayerAnimator == null)
+            {
+                PlayerAnimator = player.GetComponentInChildren<Animator>();
+            }
+
+            if (PlayerAnimator != null)
+            {
+                if (PlayerAnimator.HasState(0, Animator.StringToHash("Die")))
+                    PlayerAnimator.Play("Die");
+                else if (PlayerAnimator.HasState(0, Animator.StringToHash("Dead")))
+                    PlayerAnimator.Play("Dead");
+                else
+                    PlayerAnimator.Play("Die");
+            }
+
+            SideScrollMovement movement = player.GetComponent<SideScrollMovement>();
+            if (movement != null)
+            {
+                movement.enabled = false;
+            }
+
+            Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+            if (playerRb != null)
+            {
+                playerRb.linearVelocity = Vector2.zero;
+            }
         }
+
+        if (playerHided != null) playerHided.enabled = false;
+        if (playerMovement != null) playerMovement.enabled = false;
+
+        yield return new WaitForSeconds(2f);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     void OnDrawGizmosSelected()

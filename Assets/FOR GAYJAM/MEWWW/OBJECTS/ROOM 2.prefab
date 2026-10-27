@@ -5546,6 +5546,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 7275593656068690930}
+        m_TargetAssemblyTypeName: Door, Assembly-CSharp
+        m_MethodName: Updateroomcoount
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   animator: {fileID: 0}
   doorCollider: {fileID: 0}
   forceSolidOnSpawn: 1
@@ -22608,6 +22620,7 @@ MonoBehaviour:
   stairroomprefab:
   - {fileID: 7601628479252114360, guid: f2d40aab3b1c79844be643cb2645e609, type: 3}
   EventRooms1: []
+  EventRooms2: []
   changeFirstEventRoom: 0
   alternateFirstEventRoom: {fileID: 7601628479252114360, guid: a93bbb39aeea0264b91d782ba6af1aec, type: 3}
   snapshotroomchace: 3

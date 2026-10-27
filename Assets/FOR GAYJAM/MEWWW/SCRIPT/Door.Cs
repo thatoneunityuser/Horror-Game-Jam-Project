@@ -341,6 +341,7 @@ public class Door : MonoBehaviour
         lastGlobalDoorOpenedTime = Time.time;
 
         Debug.Log("[Door] Door opened!");
+        
 
         if (animator != null)
         {
@@ -421,5 +422,9 @@ public class Door : MonoBehaviour
     {
         hasKey = true;
         needKey = false;
+    }
+    public void Updateroomcoount()
+    {
+        RoomCounterUI.Instance.SyncWithRoomCounter();
     }
 }

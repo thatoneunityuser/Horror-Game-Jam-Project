@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -92,6 +93,8 @@ public class RushEntity : MonoBehaviour
         }
     }
 
+    private bool isKillingPlayer = false;
+
     void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
@@ -103,7 +106,10 @@ public class RushEntity : MonoBehaviour
 
             if (hideStatus == null || !hideStatus.IsPlayerHide)
             {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                if (!isKillingPlayer)
+                {
+                    StartCoroutine(PlayerDieCoroutine());
+                }
             }
         }
         Door door = other.GetComponent<Door>();
@@ -113,6 +119,39 @@ public class RushEntity : MonoBehaviour
             door.UnlockDoor();
             door.needKey = false;
         }
+    }
+
+    private IEnumerator PlayerDieCoroutine()
+    {
+        isKillingPlayer = true;
+
+        // Disable collider so it doesn't trigger multiple times while rushing past
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            Animator anim = player.GetComponent<Animator>();
+            if (anim == null) anim = player.GetComponentInChildren<Animator>();
+            if (anim != null)
+            {
+                if (anim.HasState(0, Animator.StringToHash("Die"))) anim.Play("Die");
+                else if (anim.HasState(0, Animator.StringToHash("Dead"))) anim.Play("Dead");
+                else anim.Play("Die");
+            }
+
+            SideScrollMovement movement = player.GetComponent<SideScrollMovement>();
+            if (movement != null) movement.enabled = false;
+
+            Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+            if (playerRb != null) playerRb.linearVelocity = Vector2.zero;
+        }
+
+        if (hideStatus != null) hideStatus.enabled = false;
+
+        yield return new WaitForSeconds(2f);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
 

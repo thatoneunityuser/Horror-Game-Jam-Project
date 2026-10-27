@@ -211,6 +211,13 @@ MonoBehaviour:
   Speed: 30
   lifetime: 5
   IsReversal: 0
+  audioSource: {fileID: 0}
+  panDistance: 15
+  invertPan: 0
+  useDistanceVolume: 1
+  maxAudioDistance: 25
+  maxVolume: 1
+  minVolume: 0.05
 --- !u!82 &-578560163753325114
 AudioSource:
   m_ObjectHideFlags: 0
@@ -5138,7 +5145,7 @@ ParticleSystemRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 2
+  m_SortingOrder: 6
   m_MaskInteraction: 0
   m_RenderMode: 0
   m_MeshDistribution: 0

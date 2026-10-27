@@ -6,8 +6,17 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/FOR GAYJAM/NON/Menu GayJam.unity
+    guid: df90b7616a95a36448e52326fed29032
+  - enabled: 1
+    path: Assets/FOR GAYJAM/MEWWW/Scene/BEGINNING.unity
+    guid: c7555e182312e8b40ae446bca612dc64
+  - enabled: 1
     path: Assets/FOR GAYJAM/MEWWW/Scene/MAIN GAMEPLAY.unity
     guid: 0e3b77ac4eb09cd4cbf4dc5894870db6
+  - enabled: 1
+    path: Assets/FOR GAYJAM/MEWWW/Scene/ENDING.unity
+    guid: 590111cd0f85a2040a505179194bd6fc
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

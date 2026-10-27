@@ -8,6 +8,7 @@ public class SideScrollMovement : MonoBehaviour
     public float acceleration = 40.0f;      // how fast speed builds up (units/s²)
     public float deceleration = 60.0f; 
     [HideInInspector] public bool isMoving;
+    public Animator animator;
 
     [Header("Audio")]
     public AudioClip Walk;
@@ -26,6 +27,10 @@ public class SideScrollMovement : MonoBehaviour
     [Tooltip("If stamina hits 0, you cannot sprint until stamina recovers back to this threshold")]
     public float minStaminaToSprintAfterExhaustion = 20.0f;
     [HideInInspector] public bool isExhausted = false;
+
+    [Header("Crawl")]
+    public float crawlSpeed = 3f;
+    [HideInInspector] public bool isCrawling = false;
 
     [Header("Walk To Stair")]
     public bool canWalkUpStair = true;
@@ -171,11 +176,22 @@ public class SideScrollMovement : MonoBehaviour
             isExhausted = false;
         }
 
-        bool wantsToSprint = Input.GetKey(KeyCode.LeftShift) && moveInput != 0f;
+        bool wantsToCrawl = Input.GetKey(KeyCode.LeftControl);
+        isCrawling = wantsToCrawl && moveInput != 0f;
+
+        bool wantsToSprint = Input.GetKey(KeyCode.LeftShift) && moveInput != 0f && !wantsToCrawl;
         bool isSprinting = wantsToSprint && !isExhausted && stamina > 0f;
         float cappedSpeed = maxSpeed;
 
-        if (isSprinting)
+        if (isCrawling)
+        {
+            cappedSpeed = crawlSpeed;
+            if (!isDashing)
+            {
+                stamina += staminaRegenRate * Time.deltaTime;
+            }
+        }
+        else if (isSprinting)
         {
             cappedSpeed = maxSpeed * sprintMultiplier;
             stamina -= staminaDrainRate * Time.deltaTime;
@@ -191,11 +207,19 @@ public class SideScrollMovement : MonoBehaviour
         // ── Terraria-style horizontal movement ────────────────────────────────
         if (moveInput != 0f)
         {
+            if(animator != null)
+            {
+                animator.SetBool("isMoving", true);
+            }
             float targetX = moveInput * cappedSpeed;
             currentSpeedX = Mathf.MoveTowards(currentSpeedX, targetX, acceleration * Time.deltaTime);
         }
         else
         {
+            if(animator != null)
+            {
+                animator.SetBool("isMoving", false);
+            }
             currentSpeedX = Mathf.MoveTowards(currentSpeedX, 0f, deceleration * Time.deltaTime);
         }
 
@@ -239,7 +263,7 @@ public class SideScrollMovement : MonoBehaviour
         }
 
         // ── Footstep Audio ────────────────────────────────────────────────────
-        HandleMovementAudio(isSprinting);
+        HandleMovementAudio(isSprinting, isCrawling);
     }
 
     void FixedUpdate()
@@ -456,9 +480,16 @@ public class SideScrollMovement : MonoBehaviour
         Gizmos.DrawWireCube(groundBoxOrigin + Vector2.down * 0.1f, groundBoxSize);
     }
 
-    private void HandleMovementAudio(bool isSprinting)
+    private void HandleMovementAudio(bool isSprinting, bool isCrawling)
     {
         if (audioSource == null) return;
+
+        // Crawling is completely silent (no footstep sounds)
+        if (isCrawling)
+        {
+            StopMovementAudio();
+            return;
+        }
 
         bool hasInput = moveInput != 0f;
         bool isMovingHorizontally = hasInput && (Mathf.Abs(currentSpeedX) > 0.1f || (rb != null && Mathf.Abs(rb.linearVelocity.x) > 0.1f));
