@@ -8,8 +8,8 @@ using UnityEngine;
 public class GhostWarningTarget : MonoBehaviour
 {
     [Header("=== Arrow Appearance (รูปลักษณ์ลูกศร) ===")]
-    [Tooltip("Color of the warning arrow for this ghost")]
-    public Color arrowColor = Color.white;
+    [Tooltip("Color of the warning arrow for this ghost (default red)")]
+    public Color arrowColor = new Color(1f, 0.15f, 0.15f, 1f);
 
     [Tooltip("Custom arrow sprite (leave empty to use default triangle arrow)")]
     public Sprite customArrowSprite;

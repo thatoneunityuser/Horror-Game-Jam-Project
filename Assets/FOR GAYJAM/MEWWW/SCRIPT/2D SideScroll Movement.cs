@@ -28,6 +28,7 @@ public class SideScrollMovement : MonoBehaviour
     [Tooltip("If stamina hits 0, you cannot sprint until stamina recovers back to this threshold")]
     public float minStaminaToSprintAfterExhaustion = 20.0f;
     [HideInInspector] public bool isExhausted = false;
+    [HideInInspector] public bool isSprinting = false;
 
     [Header("Crawl")]
     public float crawlSpeed = 3f;
@@ -132,6 +133,7 @@ public class SideScrollMovement : MonoBehaviour
         }
         isDashing = false;
         isMoving = false;
+        isSprinting = false;
         currentSpeedX = 0f;
        
     }
@@ -167,7 +169,7 @@ public class SideScrollMovement : MonoBehaviour
         isCrawling = wantsToCrawl && moveInput != 0f;
 
         bool wantsToSprint = Input.GetKey(KeyCode.LeftShift) && moveInput != 0f && !wantsToCrawl;
-        bool isSprinting = wantsToSprint && !isExhausted && stamina > 0f;
+        isSprinting = wantsToSprint && !isExhausted && stamina > 0f;
         float cappedSpeed = maxSpeed;
 
         if (isCrawling)

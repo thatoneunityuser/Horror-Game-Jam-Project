@@ -133,12 +133,34 @@ namespace HorrorJam.UI.Editor
             warningManager.arrowContainer = warnRect;
             warningManager.arrowSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/FOR GAYJAM/NON/Non import/Sprites/GhostArrowIndicator.png");
             warningManager.autoTrackRushEntity = true;
-            warningManager.defaultArrowColor = Color.white;
+            warningManager.defaultArrowColor = new Color(1f, 0.15f, 0.15f, 1f);
             hudManager.ghostWarningManager = warningManager;
 
-            // 5. Save as Prefab
+            // 5. Stamina Bar (Bottom edge of screen: Pure white bar that fades when not running)
+            GameObject staminaGo = new GameObject("StaminaBar_HUD", typeof(RectTransform));
+            staminaGo.transform.SetParent(rootGo.transform, false);
+            StaminaBarUI staminaUI = staminaGo.AddComponent<StaminaBarUI>();
+            staminaUI.EnsureComponents();
+            hudManager.staminaBarUI = staminaUI;
+
+            // 6. Horror Warning Sign System (Top Center: 3 warning types)
+            GameObject warningSignGo = new GameObject("HorrorWarningSign_HUD", typeof(RectTransform));
+            warningSignGo.transform.SetParent(rootGo.transform, false);
+            HorrorWarningSignUI warningSignUI = warningSignGo.AddComponent<HorrorWarningSignUI>();
+            warningSignUI.EnsureComponents();
+            hudManager.horrorWarningSignUI = warningSignUI;
+
+            // 7. Save as Prefab to all game HUD prefab paths
             PrefabUtility.SaveAsPrefabAssetAndConnect(rootGo, PREFAB_PATH, InteractionMode.AutomatedAction);
             Debug.Log($"[GameplayHUDBuilder] Saved Prefab successfully to {PREFAB_PATH}!");
+
+            string mewwwPrefabPath = "Assets/FOR GAYJAM/MEWWW/Game UI.prefab";
+            PrefabUtility.SaveAsPrefabAsset(rootGo, mewwwPrefabPath);
+            Debug.Log($"[GameplayHUDBuilder] Saved Prefab successfully to {mewwwPrefabPath}!");
+
+            string altPrefabPath = "Assets/FOR GAYJAM/NON/UI.prefab";
+            PrefabUtility.SaveAsPrefabAsset(rootGo, altPrefabPath);
+            Debug.Log($"[GameplayHUDBuilder] Saved Prefab successfully to {altPrefabPath}!");
 
             if (!instantiateInScene)
             {

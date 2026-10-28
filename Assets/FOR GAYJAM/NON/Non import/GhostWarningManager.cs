@@ -35,8 +35,8 @@ public class GhostWarningManager : MonoBehaviour
     [Tooltip("รูปภาพลูกศร (หากเว้นว่างจะโหลด GhostArrowIndicator ให้อัตโนมัติ)")]
     public Sprite arrowSprite;
 
-    [Tooltip("สีเริ่มต้นของลูกศร")]
-    public Color defaultArrowColor = Color.white;
+    [Tooltip("สีเริ่มต้นของลูกศร (สีแดงตามที่ผู้ใช้กำหนด)")]
+    public Color defaultArrowColor = new Color(1f, 0.15f, 0.15f, 1f);
 
     [Tooltip("ขนาดของลูกศรบนหน้าจอ (พิกเซล)")]
     public Vector2 arrowSize = new Vector2(56f, 56f);
@@ -309,7 +309,13 @@ public class GhostWarningManager : MonoBehaviour
 
         Image img = arrowGo.AddComponent<Image>();
         img.sprite = (targetComp != null && targetComp.customArrowSprite != null) ? targetComp.customArrowSprite : arrowSprite;
-        img.color = (targetComp != null) ? targetComp.arrowColor : defaultArrowColor;
+        // หาก GhostWarningTarget เป็นสีขาวดั้งเดิมหรือไม่ได้ตั้ง ให้ใช้ defaultArrowColor (สีแดง)
+        Color finalArrowColor = defaultArrowColor;
+        if (targetComp != null && targetComp.arrowColor != Color.white)
+        {
+            finalArrowColor = targetComp.arrowColor;
+        }
+        img.color = finalArrowColor;
         img.preserveAspect = true;
         img.raycastTarget = false;
 

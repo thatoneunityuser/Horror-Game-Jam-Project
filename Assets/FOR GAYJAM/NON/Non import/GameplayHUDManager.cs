@@ -13,6 +13,8 @@ public class GameplayHUDManager : MonoBehaviour
     public RoomCounterUI roomCounterUI;
     public FlashlightUI flashlightUI;
     public GhostWarningManager ghostWarningManager;
+    public StaminaBarUI staminaBarUI;
+    public HorrorWarningSignUI horrorWarningSignUI;
 
     void Awake()
     {
@@ -30,6 +32,10 @@ public class GameplayHUDManager : MonoBehaviour
         if (flashlightUI == null) flashlightUI = GetComponentInChildren<FlashlightUI>();
         if (ghostWarningManager == null) ghostWarningManager = GetComponentInChildren<GhostWarningManager>();
         if (ghostWarningManager == null) ghostWarningManager = FindObjectOfType<GhostWarningManager>();
+        if (staminaBarUI == null) staminaBarUI = GetComponentInChildren<StaminaBarUI>();
+        if (staminaBarUI == null) staminaBarUI = FindObjectOfType<StaminaBarUI>();
+        if (horrorWarningSignUI == null) horrorWarningSignUI = GetComponentInChildren<HorrorWarningSignUI>();
+        if (horrorWarningSignUI == null) horrorWarningSignUI = FindObjectOfType<HorrorWarningSignUI>();
     }
 
     #region Static Helper Methods (เข้าถึงง่ายจากทุกที่)
