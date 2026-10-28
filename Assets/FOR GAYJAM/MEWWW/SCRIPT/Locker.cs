@@ -123,11 +123,13 @@ public class Locker : MonoBehaviour
 
         if (playerMovement != null)
         {
+            playerMovement.isMoving = false;
             playerMovement.enabled = true;
         }
         if (rb != null)
         {
             rb.gravityScale = 1;
+            rb.linearVelocity = Vector2.zero;
         }
     }
 

@@ -210,7 +210,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RushEntity
   Speed: 30
-  lifetime: 5
+  lifetime: 8
   IsReversal: 0
   audioSource: {fileID: 0}
   panDistance: 15

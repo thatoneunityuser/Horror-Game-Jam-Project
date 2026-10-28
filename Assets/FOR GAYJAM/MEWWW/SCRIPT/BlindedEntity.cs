@@ -5,6 +5,8 @@ using UnityEngine.SceneManagement;
 
 public class BlindedEntity : MonoBehaviour
 {
+    public static readonly HashSet<BlindedEntity> ActiveEntities = new HashSet<BlindedEntity>();
+
     [Header("Range")]
     public float MovementSensingRange = 5f;
     public float LockerSensingRange = 3f;
@@ -53,8 +55,24 @@ public class BlindedEntity : MonoBehaviour
     private Coroutine attackCoroutine;
     private Coroutine hideNoiseCoroutine;
 
+    void OnEnable()
+    {
+        ActiveEntities.Add(this);
+    }
+
+    void OnDisable()
+    {
+        ActiveEntities.Remove(this);
+    }
+
+    void OnDestroy()
+    {
+        ActiveEntities.Remove(this);
+    }
+
     void Start()
     {
+        ActiveEntities.Add(this);
         FindPlayerReferencesIfNeeded();
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (animator == null)
@@ -600,15 +618,24 @@ public class BlindedEntity : MonoBehaviour
             source.PlayOneShot(DetectedSound);
         }
     }
+
     void OnTriggerEnter2D(Collider2D collision)
     {
-        Debug.Log("I'm in range of a door");
         Door door = collision.GetComponent<Door>();
+        if (door == null) door = collision.GetComponentInParent<Door>();
         if (door != null)
         {
-            Debug.Log("I'm in range of a door");
-            door.UnlockDoor();
-            door.needKey = false;
+            door.NotifyEntityTouched(gameObject);
+        }
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        Door door = collision.gameObject.GetComponent<Door>();
+        if (door == null) door = collision.gameObject.GetComponentInParent<Door>();
+        if (door != null)
+        {
+            door.NotifyEntityTouched(gameObject);
         }
     }
 }

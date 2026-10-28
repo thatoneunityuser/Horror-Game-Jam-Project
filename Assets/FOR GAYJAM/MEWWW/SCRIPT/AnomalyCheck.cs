@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+
 public class AnomalyCheck : MonoBehaviour
 {
     public static AnomalyCheck instance;
@@ -9,7 +10,8 @@ public class AnomalyCheck : MonoBehaviour
 
     [SerializeField]
     private List<GameObject> AnomaliesInMap = new List<GameObject>();
-    
+
+    private bool hadAnomaliesLastFrame = false;
 
     private void Awake()
     {
@@ -26,18 +28,22 @@ public class AnomalyCheck : MonoBehaviour
     void Update()
     {
         AnomalyCap();
-        if(AnomaliesInMap.Count < 1 || AnomaliesInMap == null)
+
+        bool hasAnomalies = AnomaliesInMap != null && AnomaliesInMap.Count > 0;
+        if (hadAnomaliesLastFrame && !hasAnomalies)
         {
             Door[] doors = FindObjectsOfType<Door>();
             foreach (Door door in doors)
             {
-                door.UnlockDoor();
-                door.needKey = false;
+                if (door != null)
+                {
+                    door.UnlockDoor();
+                }
             }
-            
         }
+        hadAnomaliesLastFrame = hasAnomalies;
     }
-    
+
     void AnomalyCap()
     {
         // Clean up any destroyed anomalies from the list
@@ -60,6 +66,7 @@ public class AnomalyCheck : MonoBehaviour
             AnomaliesInMap.Add(Anomaly);
         }
     }
+
     public void CleanAllAnomaly()
     {
         foreach (GameObject anomaly in AnomaliesInMap)
@@ -71,6 +78,4 @@ public class AnomalyCheck : MonoBehaviour
         }
         AnomaliesInMap.Clear();
     }
-
-
 }

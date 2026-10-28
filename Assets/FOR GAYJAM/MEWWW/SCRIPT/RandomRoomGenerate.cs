@@ -35,6 +35,8 @@ public class RandomRoomGenerate : MonoBehaviour
     private RoomCounter roomCounter;
     private bool hasTriggered = false;
 
+    public bool HasTriggered => hasTriggered;
+
     void Awake()
     {
         spawnTime = Time.time;
@@ -83,6 +85,20 @@ public class RandomRoomGenerate : MonoBehaviour
         TryGenerateRoom();
     }
 
+    /// <summary>
+    /// Used by SecondEventGhost when only 1 event room exists so the next event room can pre-spawn
+    /// ahead of the closed door (runs at most once per generator instance).
+    /// </summary>
+    public bool ForceGenerateNextRoomIfPending()
+    {
+        if (hasTriggered || spawnPoint == null) return false;
+
+        hasTriggered = true;
+        lastGlobalRoomGeneratedTime = Time.time;
+        SpawnNextRoom();
+        return true;
+    }
+
     private bool TryGenerateRoom()
     {
         if (hasTriggered) return false;
@@ -115,7 +131,7 @@ public class RandomRoomGenerate : MonoBehaviour
             roomCounter = RoomCounter.instance != null ? RoomCounter.instance : FindObjectOfType<RoomCounter>();
         }
 
-        // 1. FORCED EVENT ROOMS: Handled centrally by RoomCounter (30 -> 34 by index)
+        // 1. FORCED EVENT ROOMS: Handled centrally by RoomCounter (30 -> 34 and 45 -> 48 by index)
         if (roomCounter != null)
         {
             // If this trigger enables changeFirstEventRoom, apply it
@@ -160,6 +176,21 @@ public class RandomRoomGenerate : MonoBehaviour
                         ? EventRooms1[eventIndex]
                         : EventRooms1[eventIndex % EventRooms1.Length];
                 }
+
+                if (fallbackPrefab != null)
+                {
+                    GameObject spawnedRoom = Instantiate(fallbackPrefab, spawnPoint.position, Quaternion.identity);
+                    roomCounter.GenerateRoom(spawnedRoom);
+                    return;
+                }
+            }
+            // Fallback: If EventRooms2 was configured on this prefab rather than RoomCounter
+            else if (EventRooms2 != null && EventRooms2.Length > 0 && roomCounter.PassedRoomCount >= roomCounter.event2StartRoom && roomCounter.PassedRoomCount <= roomCounter.event2EndRoom)
+            {
+                int eventIndex = roomCounter.PassedRoomCount - roomCounter.event2StartRoom;
+                GameObject fallbackPrefab = (eventIndex >= 0 && eventIndex < EventRooms2.Length)
+                    ? EventRooms2[eventIndex]
+                    : EventRooms2[eventIndex % EventRooms2.Length];
 
                 if (fallbackPrefab != null)
                 {
@@ -240,6 +271,4 @@ public class RandomRoomGenerate : MonoBehaviour
             roomCounter.GenerateRoom(newRoom);
         }
     }
-
 }
-

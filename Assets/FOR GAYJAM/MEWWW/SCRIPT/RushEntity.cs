@@ -1,9 +1,12 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class RushEntity : MonoBehaviour
 {
+    public static readonly HashSet<RushEntity> ActiveEntities = new HashSet<RushEntity>();
+
     public float Speed = 10f;
     public float lifetime = 15f;
     public bool IsReversal = false;
@@ -24,8 +27,24 @@ public class RushEntity : MonoBehaviour
     private Transform playerTransform;
     private float currentLifeTimer;
 
+    void OnEnable()
+    {
+        ActiveEntities.Add(this);
+    }
+
+    void OnDisable()
+    {
+        ActiveEntities.Remove(this);
+    }
+
+    void OnDestroy()
+    {
+        ActiveEntities.Remove(this);
+    }
+
     void Start()
     {
+        ActiveEntities.Add(this);
         currentLifeTimer = lifetime;
         hideStatus = FindObjectOfType<Hided>();
         
@@ -123,12 +142,22 @@ public class RushEntity : MonoBehaviour
                 }
             }
         }
+
         Door door = other.GetComponent<Door>();
+        if (door == null) door = other.GetComponentInParent<Door>();
         if (door != null)
         {
-            Debug.Log("I'm in range of a door");
-            door.UnlockDoor();
-            door.needKey = false;
+            door.NotifyEntityTouched(gameObject);
+        }
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        Door door = collision.gameObject.GetComponent<Door>();
+        if (door == null) door = collision.gameObject.GetComponentInParent<Door>();
+        if (door != null)
+        {
+            door.NotifyEntityTouched(gameObject);
         }
     }
 
@@ -174,5 +203,3 @@ public class RushEntity : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
-
-

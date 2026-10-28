@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,6 +7,8 @@ public class SummonTheEntityByRandom : MonoBehaviour
     [Header("Entity Prefabs & Spawning")]
     public GameObject[] Entity;
     public Transform spawnPoint;
+    [Tooltip("Delay in seconds before spawning the entity once triggered")]
+    public float spawnDelay = 0.1f;
 
     [Header("Spawn Chance & Cooldown")]
     public bool Spawnable;
@@ -27,6 +30,7 @@ public class SummonTheEntityByRandom : MonoBehaviour
 
     private int lastDecreaseFrame = -1;
     private bool initialized = false;
+    private bool isSpawningDelayed = false;
     private RoomCounter roomCounter;
 
     void Awake()
@@ -40,6 +44,11 @@ public class SummonTheEntityByRandom : MonoBehaviour
     {
         EnsureRoomCounter();
         InitCountdown();
+    }
+
+    void OnDisable()
+    {
+        isSpawningDelayed = false;
     }
 
     private void EnsureRoomCounter()
@@ -77,6 +86,7 @@ public class SummonTheEntityByRandom : MonoBehaviour
     public void DecreaseCountDown()
     {
         if (SummonOnce && hasSpawned) return;
+        if (isSpawningDelayed) return;
 
         InitCountdown();
 
@@ -89,29 +99,76 @@ public class SummonTheEntityByRandom : MonoBehaviour
 
         if (CountDown <= 0)
         {
-            bool spawned = Spawn();
-            if (spawned)
+            if (spawnDelay > 0f && isActiveAndEnabled && gameObject.activeInHierarchy)
             {
-                if (SummonOnce)
-                {
-                    // Spawn() already handled hasSpawned and cleanup
-                    return;
-                }
-                ResetCountdown();
+                StartCoroutine(DelayedCountdownSpawnRoutine(spawnDelay));
             }
             else
             {
-                if (delaySpawnIfBlockedByStair && IsNextRoomStairRoom())
-                {
-                    // Delay attempt by 1 room until player exits the stair room
-                    CountDown = 1;
-                }
-                else
-                {
-                    ResetCountdown();
-                }
+                ResolveCountdownSpawn();
             }
         }
+    }
+
+    private IEnumerator DelayedCountdownSpawnRoutine(float delay)
+    {
+        isSpawningDelayed = true;
+        yield return new WaitForSeconds(delay);
+        isSpawningDelayed = false;
+
+        ResolveCountdownSpawn();
+    }
+
+    private void ResolveCountdownSpawn()
+    {
+        if (SummonOnce && hasSpawned) return;
+
+        bool spawned = Spawn();
+        if (spawned)
+        {
+            if (SummonOnce)
+            {
+                // Spawn() already handled hasSpawned and cleanup
+                return;
+            }
+            ResetCountdown();
+        }
+        else
+        {
+            if (delaySpawnIfBlockedByStair && IsNextRoomStairRoom())
+            {
+                // Delay attempt by 1 room until player exits the stair room
+                CountDown = 1;
+            }
+            else
+            {
+                ResetCountdown();
+            }
+        }
+    }
+
+    public void SpawnWithDelay()
+    {
+        if (SummonOnce && hasSpawned) return;
+        if (isSpawningDelayed) return;
+
+        if (spawnDelay > 0f && isActiveAndEnabled && gameObject.activeInHierarchy)
+        {
+            StartCoroutine(DelayedDirectSpawnRoutine(spawnDelay));
+        }
+        else
+        {
+            Spawn();
+        }
+    }
+
+    private IEnumerator DelayedDirectSpawnRoutine(float delay)
+    {
+        isSpawningDelayed = true;
+        yield return new WaitForSeconds(delay);
+        isSpawningDelayed = false;
+
+        Spawn();
     }
 
     [ContextMenu("Spawn Entity")]

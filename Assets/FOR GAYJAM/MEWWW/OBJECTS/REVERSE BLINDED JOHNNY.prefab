@@ -189,17 +189,13 @@ MonoBehaviour:
   LockerSensingRange: 30
   SuspectRange: 40
   StopRange: 3
-  lifeTime: 10
+  lifeTime: 8
   AttackRange: {x: 1.18, y: 2.37}
   HitboxOffset: {x: 0.68, y: 0}
   currentState: 0
   runAwaySpeed: 20
   chaseSpeedMultiplier: 2
   IsReversal: 1
-  attackDuration: 1
-  missRecoveryTime: 0.15
-  missChaseSpeedMultiplier: 2.5
-  missChaseDuration: 3
   animator: {fileID: 1829185459526118215}
   audioSource: {fileID: 5710849158165668605}
   screamAudioSource: {fileID: 2041390106043887764}
