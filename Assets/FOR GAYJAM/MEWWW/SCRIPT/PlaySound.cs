@@ -12,10 +12,12 @@ public class PlaySound : MonoBehaviour
     public float maxDistance = 35f;
 
     private float nextParticlePlayTime = 0f;
+    public SideScrollMovement SideScrollMovement;
 
     void Awake()
     {
         EnsureAudioSource();
+       
     }
 
     public void PlayTheSound()
@@ -53,6 +55,21 @@ public class PlaySound : MonoBehaviour
                 a.maxDistance = maxDistance;
                 a.dopplerLevel = 0f;
             }
+        }
+    }
+    void Update()
+    {
+        if(SideScrollMovement!=null && Input.GetKeyDown(KeyCode.LeftShift) )
+        {
+            volume = 1f;
+        }
+        else if(SideScrollMovement!=null && SideScrollMovement.isCrawling)
+        {
+            volume = 0.1f;
+        }
+        else 
+        {
+            volume = 0.5f;
         }
     }
 }

@@ -281,7 +281,10 @@ public class FRISTEVENTGHOST : MonoBehaviour
             }
 
             SideScrollMovement movement = player.GetComponent<SideScrollMovement>();
-            if (movement != null) movement.enabled = false;
+            if (movement != null)
+            {
+                movement.KillPlayer(2f);
+            }
 
             Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
             if (playerRb != null) playerRb.linearVelocity = Vector2.zero;
@@ -289,7 +292,7 @@ public class FRISTEVENTGHOST : MonoBehaviour
 
         if (hideStatus != null) hideStatus.enabled = false;
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSecondsRealtime(2f);
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 

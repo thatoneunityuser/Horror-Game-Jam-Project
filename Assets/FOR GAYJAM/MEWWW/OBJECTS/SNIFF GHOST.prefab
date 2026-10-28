@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3216816907569560176}
   - component: {fileID: 8502912056133486009}
   - component: {fileID: 2462416108580652852}
+  - component: {fileID: 5131199398162363816}
   m_Layer: 0
   m_Name: SNIFF GHOST
   m_TagString: Untagged
@@ -187,16 +188,118 @@ MonoBehaviour:
   chaseSpeedMultiplier: 2
   reachPointDistance: 1
   killDistance: 1.2
+  invertFacing: 0
   detectionSize: {x: 90, y: 3}
   detectionOffset: {x: 45, y: 0}
+  lockerDetectRange: 4
   sniffTime: 1
   lockersPerRoom: 3
   patrolSpotsBeforeNextSniff: 1
   player_Target: {fileID: 0}
   animator: {fileID: 0}
-  audioSource: {fileID: 0}
-  detectedSound: {fileID: 0}
-  sniffSound: {fileID: 0}
+  audioSource: {fileID: 5131199398162363816}
+  detectedSound: {fileID: 8300000, guid: a82d2c89e25296f499575579fe0bf691, type: 3}
+  sniffSound: {fileID: 8300000, guid: daa6fe7b03a2faf48a99c3c9e187c031, type: 3}
   attackSound: {fileID: 0}
   PartrolSpot: []
   currentPatrolSpot: 0
+  currentAssignedRoom: {fileID: 0}
+  detectPlayerMovement: 1
+  noiseInvestigateDuration: 2
+--- !u!82 &5131199398162363816
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7759980240114813793}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

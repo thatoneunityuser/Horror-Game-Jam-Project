@@ -14,6 +14,7 @@ public class SummonTheEntityByRandom : MonoBehaviour
     public int minRooms = 3;
     public int maxRooms = 5;
     public int CountDown;
+    public bool CantChange = false;
     [Tooltip("If true, this spawner will summon an entity only once, then deactivate/destroy itself")]
     public bool SummonOnce;
     private bool hasSpawned = false;
@@ -26,24 +27,51 @@ public class SummonTheEntityByRandom : MonoBehaviour
 
     private int lastDecreaseFrame = -1;
     private bool initialized = false;
+    private RoomCounter roomCounter;
 
     void Awake()
     {
         // Init in Awake (not Start) so CountDown is never 0 when something decreases it early
+        EnsureRoomCounter();
         InitCountdown();
     }
 
     void Start()
     {
+        EnsureRoomCounter();
         InitCountdown();
+    }
+
+    private void EnsureRoomCounter()
+    {
+        if (roomCounter == null)
+        {
+            roomCounter = RoomCounter.instance != null ? RoomCounter.instance : FindObjectOfType<RoomCounter>();
+        }
     }
 
     private void InitCountdown()
     {
         if (initialized) return;
         initialized = true;
+
+        EnsureRoomCounter();
+
+        // Apply +2% summon rate per passed room count
+        if (!SummonOnce && RoomCounter.instance != null && RoomCounter.instance.PassedRoomCount > 0)
+        {
+            spawnChancePercentage = Mathf.Clamp(spawnChancePercentage + (RoomCounter.instance.PassedRoomCount * 2), 0, 100);
+        }
+
         RollChance();
         ResetCountdown();
+    }
+
+    public void IncreaseSummonRate(int amount = 2)
+    {
+        if (SummonOnce) return;
+        spawnChancePercentage = Mathf.Clamp(spawnChancePercentage + amount, 0, 100);
+        Debug.Log($"[SummonTheEntityByRandom] Summon rate increased on '{gameObject.name}' -> {spawnChancePercentage}%");
     }
 
     public void DecreaseCountDown()
@@ -208,7 +236,30 @@ public class SummonTheEntityByRandom : MonoBehaviour
 
     private void ResetCountdown()
     {
-        // Random.Range with integers is max-exclusive, so add 1
-        CountDown = Mathf.Max(1, Random.Range(minRooms, maxRooms + 1));
+        // If CantChange is enabled, preserve the inspector countdown
+        if (CantChange)
+        {
+            CountDown = Mathf.Max(1, CountDown);
+            return;
+        }
+
+        EnsureRoomCounter();
+        int passedRooms = (roomCounter != null) ? roomCounter.PassedRoomCount : 0;
+
+        if (passedRooms <= 10)
+        {
+            CountDown = maxRooms;
+        }
+        else if (passedRooms <= 20)
+        {
+            // Random.Range with integers is max-exclusive, so add 1 to include maxRooms
+            CountDown = Random.Range(minRooms, maxRooms + 1);
+        }
+        else
+        {
+            CountDown = minRooms;
+        }
+
+        CountDown = Mathf.Max(1, CountDown);
     }
 }

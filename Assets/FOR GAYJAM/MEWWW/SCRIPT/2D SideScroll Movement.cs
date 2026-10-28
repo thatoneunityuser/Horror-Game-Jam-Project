@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class SideScrollMovement : MonoBehaviour
 {
@@ -85,29 +86,6 @@ public class SideScrollMovement : MonoBehaviour
 
     void Start()
     {
-        if (audioSource == null)
-        {
-            audioSource = GetComponent<AudioSource>();
-        }
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-        }
-        audioSource.playOnAwake = false;
-        audioSource.loop = true;
-        audioSource.spatialBlend = 0f; // 2D playback so distance to camera doesn't attenuate footstep audio
-
-#if UNITY_EDITOR
-        if (Walk == null)
-        {
-            Walk = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/MEWWW/AUDIOOOO/walk.wav");
-        }
-        if (Sprint == null)
-        {
-            Sprint = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/MEWWW/AUDIOOOO/run.wav");
-        }
-#endif
-
         rb = GetComponent<Rigidbody2D>();
         if (rb != null)
         {
@@ -119,6 +97,16 @@ public class SideScrollMovement : MonoBehaviour
         if (PlayerCollider == null)
         {
             PlayerCollider = GetComponent<Collider2D>();
+        }
+
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
+
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
         }
 
         // Zero friction so the player never sticks to ground/walls (only if no material assigned)
@@ -145,7 +133,7 @@ public class SideScrollMovement : MonoBehaviour
         isDashing = false;
         isMoving = false;
         currentSpeedX = 0f;
-        StopMovementAudio();
+       
     }
 
     void Update()
@@ -158,7 +146,6 @@ public class SideScrollMovement : MonoBehaviour
         if (isDashing)
         {
             isMoving = true;
-            StopMovementAudio();
             return;
         }
 
@@ -207,18 +194,27 @@ public class SideScrollMovement : MonoBehaviour
         // ── Terraria-style horizontal movement ────────────────────────────────
         if (moveInput != 0f)
         {
-            if(animator != null)
+            if (animator != null)
             {
                 animator.SetBool("isMoving", true);
+                if (isSprinting)
+                {
+                    animator.speed = sprintMultiplier;
+                }
+                else
+                {
+                    animator.speed = 1f;
+                }
             }
             float targetX = moveInput * cappedSpeed;
             currentSpeedX = Mathf.MoveTowards(currentSpeedX, targetX, acceleration * Time.deltaTime);
         }
         else
         {
-            if(animator != null)
+            if (animator != null)
             {
                 animator.SetBool("isMoving", false);
+                animator.speed = 1f;
             }
             currentSpeedX = Mathf.MoveTowards(currentSpeedX, 0f, deceleration * Time.deltaTime);
         }
@@ -263,7 +259,7 @@ public class SideScrollMovement : MonoBehaviour
         }
 
         // ── Footstep Audio ────────────────────────────────────────────────────
-        HandleMovementAudio(isSprinting, isCrawling);
+       
     }
 
     void FixedUpdate()
@@ -398,7 +394,6 @@ public class SideScrollMovement : MonoBehaviour
     {
         isDashing = true;
         stamina -= dashStaminaCost;
-        StopMovementAudio();
 
         if (audioSource != null && dashSound != null)
         {
@@ -480,58 +475,8 @@ public class SideScrollMovement : MonoBehaviour
         Gizmos.DrawWireCube(groundBoxOrigin + Vector2.down * 0.1f, groundBoxSize);
     }
 
-    private void HandleMovementAudio(bool isSprinting, bool isCrawling)
-    {
-        if (audioSource == null) return;
-
-        // Crawling is completely silent (no footstep sounds)
-        if (isCrawling)
-        {
-            StopMovementAudio();
-            return;
-        }
-
-        bool hasInput = moveInput != 0f;
-        bool isMovingHorizontally = hasInput && (Mathf.Abs(currentSpeedX) > 0.1f || (rb != null && Mathf.Abs(rb.linearVelocity.x) > 0.1f));
-        bool isMovingOnFoot = isMovingHorizontally && IsGrounded() && !isDashing && !isFlyingInput;
-
-        if (isMovingOnFoot)
-        {
-            AudioClip targetClip = isSprinting ? (Sprint != null ? Sprint : Walk) : Walk;
-            float targetPitch = (isSprinting && Sprint == null) ? 1.25f : 1.0f;
-            float targetVolume = isSprinting ? sprintVolume : walkVolume;
-
-            if (targetClip != null)
-            {
-                audioSource.volume = targetVolume;
-                audioSource.pitch = targetPitch;
-
-                if (audioSource.clip != targetClip || !audioSource.isPlaying)
-                {
-                    audioSource.clip = targetClip;
-                    audioSource.loop = true;
-                    audioSource.Play();
-                }
-            }
-            else
-            {
-                StopMovementAudio();
-            }
-        }
-        else
-        {
-            StopMovementAudio();
-        }
-    }
-
-    private void StopMovementAudio()
-    {
-        if (audioSource != null && audioSource.isPlaying && (audioSource.clip == Walk || audioSource.clip == Sprint))
-        {
-            audioSource.Stop();
-        }
-    }
-
+    
+      
     public bool IsGrounded()
     {
         // 1. BoxCast check: check all solid layers (including Default layer 0 and stairs layer 6)
@@ -561,5 +506,76 @@ public class SideScrollMovement : MonoBehaviour
         }
 
         return false;
+    }
+    public void PlayWalkSound()
+    {
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
+
+        if (audioSource == null) return;
+        if (isCrawling) return;
+
+        bool isCurrentlySprinting = Input.GetKey(KeyCode.LeftShift) && !isExhausted && stamina > 0f;
+        AudioClip clipToPlay = (isCurrentlySprinting && Sprint != null) ? Sprint : Walk;
+        float volume = isCurrentlySprinting ? sprintVolume : walkVolume;
+
+        if (clipToPlay != null)
+        {
+            audioSource.PlayOneShot(clipToPlay, volume);
+        }
+    }
+
+    [HideInInspector] public bool isDead = false;
+
+    public void KillPlayer(float reloadDelay = 2f)
+    {
+        if (isDead) return;
+        isDead = true;
+
+        StartCoroutine(PlayerDeathRoutine(reloadDelay));
+    }
+
+    private IEnumerator PlayerDeathRoutine(float reloadDelay)
+    {
+        enabled = false;
+        currentSpeedX = 0f;
+        isMoving = false;
+        isDashing = false;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+        }
+
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+            if (animator == null)
+            {
+                animator = GetComponentInChildren<Animator>();
+            }
+        }
+
+        if (animator != null)
+        {
+            animator.speed = 1f;
+            if (animator.HasState(0, Animator.StringToHash("Die")))
+                animator.Play("Die");
+            else if (animator.HasState(0, Animator.StringToHash("Dead")))
+                animator.Play("Dead");
+            else
+                animator.Play("Die");
+        }
+
+        Hided hided = FindObjectOfType<Hided>();
+        if (hided != null)
+        {
+            hided.enabled = false;
+        }
+
+        yield return new WaitForSecondsRealtime(reloadDelay);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

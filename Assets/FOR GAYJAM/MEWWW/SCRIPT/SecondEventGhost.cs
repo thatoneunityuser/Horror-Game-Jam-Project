@@ -66,6 +66,20 @@ public class SecondEventGhost : MonoBehaviour
     public Transform[] PartrolSpot;
     public int currentPatrolSpot = 0;
 
+    [Header("Room Tracking (Current Room Only)")]
+    [Tooltip("The room GameObject the ghost is currently assigned to patrol")]
+    public GameObject currentAssignedRoom;
+    private float roomCheckTimer = 0f;
+
+    [Header("Movement Sensing (Buff Settings)")]
+    [Tooltip("If true, ghost detects player moving without crawling (player must crawl to stay silent)")]
+    public bool detectPlayerMovement = true;
+    [Tooltip("How long ghost investigates footstep noise if line of sight is lost")]
+    public float noiseInvestigateDuration = 2.0f;
+    private float noiseInvestigateTimer = 0f;
+    private bool isChasingFromNoise = false;
+    private SideScrollMovement playerMovement;
+
     // Private runtime tracking
     private Hided Hide;
     private SpriteRenderer spriteRenderer;
@@ -89,8 +103,7 @@ public class SecondEventGhost : MonoBehaviour
     void Start()
     {
         FindPlayerReferencesIfNeeded();
-        RefreshPatrolSpots();
-        ChooseLockersToSniff();
+        UpdateRoomTracking(true);
         PickRandomPatrolSpot();
 
         // Initialize facing direction based on scale
@@ -122,24 +135,18 @@ public class SecondEventGhost : MonoBehaviour
                 return;
             }
 
-            // If room count changed, refresh patrol spots and update locker pool
+            // If room count changed, refresh room tracking
             if (currentRoom != lastCheckedRoomCount)
             {
                 lastCheckedRoomCount = currentRoom;
-                RefreshPatrolSpots();
-                UpdateLockerPoolIfNeeded();
+                UpdateRoomTracking(false);
             }
         }
 
-        // Periodically refresh patrol spots in case new rooms were generated
-        searchPatrolSpotsTimer -= Time.deltaTime;
-        if (searchPatrolSpotsTimer <= 0f)
-        {
-            searchPatrolSpotsTimer = 1.5f;
-            RefreshPatrolSpots();
-        }
-
         FindPlayerReferencesIfNeeded();
+
+        // Check if player entered a different room that has patrol spots and lockers
+        UpdateRoomTracking(false);
 
         // When player is dead, ignore detection/chase and just keep patrolling like nothing happened
         if (isKillingPlayer)
@@ -161,11 +168,20 @@ public class SecondEventGhost : MonoBehaviour
             }
             else
             {
-                // 3. Normal detection check: transitions into CHASE if player seen in front rectangle
+                // 3. Detection checks:
                 if (ghost_State != GHOST_STATE.CHASE && !isRushingToKill)
                 {
-                    if (CheckPlayerInDetectionRange())
+                    // A) Movement noise: player can ONLY crawl while moving; otherwise ghost moves to player!
+                    if (CheckPlayerMovementNoise())
                     {
+                        isChasingFromNoise = true;
+                        noiseInvestigateTimer = noiseInvestigateDuration;
+                        StartChase();
+                    }
+                    // B) Front detection rectangle (visual sight)
+                    else if (CheckPlayerInDetectionRange())
+                    {
+                        isChasingFromNoise = false;
                         StartChase();
                     }
                 }
@@ -234,9 +250,10 @@ public class SecondEventGhost : MonoBehaviour
             SetFacing(Mathf.Sign(diffX));
         }
 
-        // Move horizontally towards patrol spot
+        // Move horizontally and smoothly align Y towards patrol spot
         float newX = Mathf.MoveTowards(transform.position.x, targetSpot.position.x, moveSpeed * Time.deltaTime);
-        transform.position = new Vector3(newX, transform.position.y, transform.position.z);
+        float newY = Mathf.MoveTowards(transform.position.y, targetSpot.position.y, moveSpeed * Time.deltaTime);
+        transform.position = new Vector3(newX, newY, transform.position.z);
 
         // Check if reached current patrol spot horizontally
         if (Mathf.Abs(transform.position.x - targetSpot.position.x) <= reachPointDistance)
@@ -463,6 +480,7 @@ public class SecondEventGhost : MonoBehaviour
         // In normal rooms (45 - 47), if player successfully hides, ghost loses target and returns to patrol
         if (!isLastRoom && Hide != null && Hide.IsPlayerHide)
         {
+            isChasingFromNoise = false;
             ghost_State = GHOST_STATE.PATROL;
             PickRandomPatrolSpot();
             return;
@@ -475,10 +493,38 @@ public class SecondEventGhost : MonoBehaviour
             {
                 if (!isLastRoom)
                 {
+                    isChasingFromNoise = false;
                     ghost_State = GHOST_STATE.PATROL;
                     PickRandomPatrolSpot();
                 }
                 return;
+            }
+        }
+
+        // Check if player is directly seen in detection box
+        bool seesPlayer = CheckPlayerInDetectionRange();
+        if (seesPlayer)
+        {
+            isChasingFromNoise = false; // Seen visually, so full chase
+        }
+        else if (isChasingFromNoise && !isLastRoom)
+        {
+            // If chasing from noise and player is out of visual sight
+            if (CheckPlayerMovementNoise())
+            {
+                noiseInvestigateTimer = noiseInvestigateDuration; // Still moving loudly!
+            }
+            else
+            {
+                noiseInvestigateTimer -= Time.deltaTime;
+                if (noiseInvestigateTimer <= 0f)
+                {
+                    // Player stopped moving or started crawling and is out of sight -> return to patrol
+                    isChasingFromNoise = false;
+                    ghost_State = GHOST_STATE.PATROL;
+                    PickRandomPatrolSpot();
+                    return;
+                }
             }
         }
 
@@ -561,61 +607,313 @@ public class SecondEventGhost : MonoBehaviour
     }
 
     // ==========================================
+    // ROOM TRACKING & MOVEMENT SENSING
+    // ==========================================
+    [System.Serializable]
+    public class EventRoomData
+    {
+        public GameObject roomObject;
+        public List<Transform> patrolSpots = new List<Transform>();
+        public List<GameObject> lockers = new List<GameObject>();
+        public float minX = float.MaxValue;
+        public float maxX = float.MinValue;
+
+        public bool IsValid => patrolSpots != null && patrolSpots.Count > 0 && lockers != null && lockers.Count > 0;
+
+        public bool ContainsX(float x, float margin = 3f)
+        {
+            return x >= (minX - margin) && x <= (maxX + margin);
+        }
+
+        public float DistanceToX(float x)
+        {
+            if (ContainsX(x, 0f)) return 0f;
+            if (x < minX) return minX - x;
+            return x - maxX;
+        }
+    }
+
+    private List<EventRoomData> GetEligibleRooms()
+    {
+        List<EventRoomData> result = new List<EventRoomData>();
+        Dictionary<GameObject, EventRoomData> map = new Dictionary<GameObject, EventRoomData>();
+
+        // 1. Gather all patrol spots
+        GameObject[] spots = GameObject.FindGameObjectsWithTag("PartrolSpot");
+        if (spots != null)
+        {
+            foreach (GameObject spot in spots)
+            {
+                if (spot == null) continue;
+                GameObject room = GetRoomForObject(spot);
+                if (room == null) continue;
+
+                if (!map.TryGetValue(room, out EventRoomData data))
+                {
+                    data = new EventRoomData { roomObject = room };
+                    map[room] = data;
+                }
+                data.patrolSpots.Add(spot.transform);
+                float x = spot.transform.position.x;
+                if (x < data.minX) data.minX = x;
+                if (x > data.maxX) data.maxX = x;
+            }
+        }
+
+        // 2. Gather all lockers
+        GameObject[] lockers = GameObject.FindGameObjectsWithTag("Locker");
+        if (lockers != null)
+        {
+            foreach (GameObject locker in lockers)
+            {
+                if (locker == null) continue;
+                GameObject room = GetRoomForObject(locker);
+                if (room == null) continue;
+
+                if (!map.TryGetValue(room, out EventRoomData data))
+                {
+                    data = new EventRoomData { roomObject = room };
+                    map[room] = data;
+                }
+                data.lockers.Add(locker);
+                float x = locker.transform.position.x;
+                if (x < data.minX) data.minX = x;
+                if (x > data.maxX) data.maxX = x;
+            }
+        }
+
+        // 3. Keep only rooms that have BOTH patrol spots AND lockers
+        foreach (var kvp in map)
+        {
+            if (kvp.Value.IsValid)
+            {
+                if (kvp.Value.minX == float.MaxValue) kvp.Value.minX = kvp.Key.transform.position.x - 5f;
+                if (kvp.Value.maxX == float.MinValue) kvp.Value.maxX = kvp.Key.transform.position.x + 5f;
+                result.Add(kvp.Value);
+            }
+        }
+
+        return result;
+    }
+
+    private GameObject GetRoomForObject(GameObject obj)
+    {
+        if (obj == null) return null;
+
+        if (RoomCounter.instance != null && RoomCounter.instance.currentRooms != null)
+        {
+            foreach (GameObject r in RoomCounter.instance.currentRooms)
+            {
+                if (r != null && obj.transform.IsChildOf(r.transform))
+                {
+                    return r;
+                }
+            }
+        }
+
+        return obj.transform.root != null ? obj.transform.root.gameObject : obj;
+    }
+
+    private void UpdateRoomTracking(bool forceInitial = false)
+    {
+        if (!forceInitial)
+        {
+            roomCheckTimer -= Time.deltaTime;
+            if (roomCheckTimer > 0f) return;
+            roomCheckTimer = 0.35f;
+        }
+
+        List<EventRoomData> eligibleRooms = GetEligibleRooms();
+        if (eligibleRooms == null || eligibleRooms.Count == 0) return;
+
+        // If no room is assigned yet, assign to the room closest to the ghost
+        if (currentAssignedRoom == null)
+        {
+            EventRoomData initialRoom = eligibleRooms
+                .OrderBy(r => r.DistanceToX(transform.position.x))
+                .FirstOrDefault();
+
+            if (initialRoom != null)
+            {
+                AssignToRoom(initialRoom, false);
+            }
+            return;
+        }
+
+        if (player_Target == null)
+        {
+            FindPlayerReferencesIfNeeded();
+            if (player_Target == null) return;
+        }
+
+        float playerX = player_Target.position.x;
+
+        // Check which eligible room (with patrol spot & locker) the player is currently in
+        EventRoomData playerRoom = null;
+        foreach (EventRoomData r in eligibleRooms)
+        {
+            if (r.ContainsX(playerX, 2f))
+            {
+                playerRoom = r;
+                break;
+            }
+        }
+
+        if (playerRoom == null)
+        {
+            playerRoom = eligibleRooms.OrderBy(r => r.DistanceToX(playerX)).FirstOrDefault();
+        }
+
+        // When player goes into a DIFFERENT room that has patrol spot and locker -> move itself to that room!
+        if (playerRoom != null && playerRoom.roomObject != currentAssignedRoom)
+        {
+            Debug.Log($"[SecondEventGhost] Player entered different room with patrol spots & lockers ('{playerRoom.roomObject.name}'). Moving ghost to that room!");
+            AssignToRoom(playerRoom, true);
+        }
+    }
+
+    private void AssignToRoom(EventRoomData roomData, bool moveToNewRoom)
+    {
+        if (roomData == null || roomData.roomObject == null) return;
+
+        currentAssignedRoom = roomData.roomObject;
+        PartrolSpot = roomData.patrolSpots.OrderBy(x => x.name).ToArray();
+        currentPatrolSpot = 0;
+
+        // Pool of lockers to sniff in this room
+        lockerToSniff = new List<GameObject>(roomData.lockers);
+        sniffedLockers.Clear();
+
+        if (isSniffing && sniffingCoroutine != null)
+        {
+            StopCoroutine(sniffingCoroutine);
+            sniffingCoroutine = null;
+            isSniffing = false;
+        }
+
+        // Set target patrol spot in the new room where the player is staying (WALK, NO TELEPORT)
+        if (PartrolSpot != null && PartrolSpot.Length > 0)
+        {
+            int targetIndex = 0;
+            if (player_Target != null)
+            {
+                float bestDist = float.MaxValue;
+                for (int i = 0; i < PartrolSpot.Length; i++)
+                {
+                    if (PartrolSpot[i] == null) continue;
+                    float d = Mathf.Abs(PartrolSpot[i].position.x - player_Target.position.x);
+                    if (d < bestDist)
+                    {
+                        bestDist = d;
+                        targetIndex = i;
+                    }
+                }
+            }
+
+            currentPatrolSpot = targetIndex;
+
+            if (moveToNewRoom)
+            {
+                if (audioSource != null && sniffSound != null)
+                {
+                    audioSource.PlayOneShot(sniffSound);
+                }
+
+                isChasingFromNoise = false;
+                if (ghost_State != GHOST_STATE.CHASE)
+                {
+                    ghost_State = GHOST_STATE.PATROL;
+                }
+
+                Debug.Log($"[SecondEventGhost] Player entered room '{roomData.roomObject.name}'. Walking towards patrol spot '{PartrolSpot[currentPatrolSpot].name}' without teleporting.");
+            }
+        }
+    }
+
+    private bool CheckPlayerMovementNoise()
+    {
+        if (!detectPlayerMovement || isKillingPlayer) return false;
+
+        // If player is hidden in locker, they are silent
+        if (Hide != null && Hide.IsPlayerHide)
+        {
+            return false;
+        }
+
+        if (player_Target == null)
+        {
+            FindPlayerReferencesIfNeeded();
+            if (player_Target == null) return false;
+        }
+
+        if (playerMovement == null)
+        {
+            playerMovement = player_Target.GetComponent<SideScrollMovement>();
+        }
+
+        // Determine if player is moving
+        bool hasMoveInput = Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0.05f;
+        bool isMoving = (playerMovement != null && (playerMovement.isMoving || playerMovement.isDashing)) || hasMoveInput;
+
+        if (!isMoving)
+        {
+            return false;
+        }
+
+        // Player can ONLY crawl. Check if player is crawling
+        bool isCrawling = (playerMovement != null && playerMovement.isCrawling) || (hasMoveInput && Input.GetKey(KeyCode.LeftControl));
+
+        // If moving and NOT crawling -> ghost detects and moves to player!
+        if (!isCrawling)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    // ==========================================
     // LOCKER SELECTION HELPERS
     // ==========================================
     private void ChooseLockersToSniff()
     {
         sniffedLockers.Clear();
 
-        int roomsAppeared = 1;
-        if (RoomCounter.instance != null)
+        List<GameObject> availableLockers = new List<GameObject>();
+        if (currentAssignedRoom != null)
         {
-            int currentRoom = RoomCounter.instance.PassedRoomCount;
-            roomsAppeared = Mathf.Clamp(currentRoom - eventStartRoom + 1, 1, (eventEndRoom - eventStartRoom + 1));
+            Locker[] roomLockers = currentAssignedRoom.GetComponentsInChildren<Locker>();
+            if (roomLockers != null)
+            {
+                foreach (var l in roomLockers)
+                {
+                    if (l != null) availableLockers.Add(l.gameObject);
+                }
+            }
         }
 
-        int targetCount = lockersPerRoom * roomsAppeared;
+        if (availableLockers.Count == 0)
+        {
+            GameObject[] all = GameObject.FindGameObjectsWithTag("Locker");
+            if (all != null) availableLockers.AddRange(all.Where(l => l != null));
+        }
 
-        GameObject[] allLockers = GameObject.FindGameObjectsWithTag("Locker");
-        if (allLockers == null || allLockers.Length == 0)
+        if (availableLockers.Count == 0)
         {
             lockerToSniff.Clear();
             return;
         }
 
-        // Shuffle all available lockers randomly
-        List<GameObject> shuffled = allLockers.Where(l => l != null).OrderBy(x => Random.value).ToList();
-
-        int countToPick = Mathf.Min(targetCount, shuffled.Count);
+        List<GameObject> shuffled = availableLockers.OrderBy(x => Random.value).ToList();
+        int countToPick = Mathf.Min(lockersPerRoom, shuffled.Count);
         lockerToSniff = shuffled.Take(countToPick).ToList();
 
-        Debug.Log($"[SecondEventGhost] Chosen {lockerToSniff.Count} lockers to sniff for {roomsAppeared} event room(s).");
+        Debug.Log($"[SecondEventGhost] Chosen {lockerToSniff.Count} lockers to sniff in room '{(currentAssignedRoom != null ? currentAssignedRoom.name : "all")}'.");
     }
 
     private void UpdateLockerPoolIfNeeded()
     {
-        int roomsAppeared = 1;
-        if (RoomCounter.instance != null)
-        {
-            roomsAppeared = Mathf.Clamp(RoomCounter.instance.PassedRoomCount - eventStartRoom + 1, 1, (eventEndRoom - eventStartRoom + 1));
-        }
-
-        int targetCount = lockersPerRoom * roomsAppeared;
-        if (lockerToSniff.Count < targetCount)
-        {
-            GameObject[] allLockers = GameObject.FindGameObjectsWithTag("Locker");
-            if (allLockers != null)
-            {
-                foreach (GameObject l in allLockers)
-                {
-                    if (l != null && !lockerToSniff.Contains(l))
-                    {
-                        lockerToSniff.Add(l);
-                        if (lockerToSniff.Count >= targetCount) break;
-                    }
-                }
-            }
-        }
+        ChooseLockersToSniff();
     }
 
     // ==========================================
@@ -623,10 +921,28 @@ public class SecondEventGhost : MonoBehaviour
     // ==========================================
     private void RefreshPatrolSpots()
     {
-        GameObject[] spots = GameObject.FindGameObjectsWithTag("PartrolSpot");
-        if (spots != null && spots.Length > 0)
+        if (currentAssignedRoom != null)
         {
-            PartrolSpot = spots.OrderBy(x => x.name).Select(x => x.transform).ToArray();
+            Transform[] spots = currentAssignedRoom.GetComponentsInChildren<Transform>()
+                .Where(t => t != null && t.CompareTag("PartrolSpot"))
+                .OrderBy(x => x.name)
+                .ToArray();
+
+            if (spots != null && spots.Length > 0)
+            {
+                PartrolSpot = spots;
+                if (currentPatrolSpot >= PartrolSpot.Length)
+                {
+                    currentPatrolSpot = Mathf.Max(0, PartrolSpot.Length - 1);
+                }
+                return;
+            }
+        }
+
+        GameObject[] allSpots = GameObject.FindGameObjectsWithTag("PartrolSpot");
+        if (allSpots != null && allSpots.Length > 0)
+        {
+            PartrolSpot = allSpots.OrderBy(x => x.name).Select(x => x.transform).ToArray();
 
             if (currentPatrolSpot >= PartrolSpot.Length)
             {
@@ -673,7 +989,10 @@ public class SecondEventGhost : MonoBehaviour
             }
 
             SideScrollMovement movement = player.GetComponent<SideScrollMovement>();
-            if (movement != null) movement.enabled = false;
+            if (movement != null)
+            {
+                movement.KillPlayer(2f);
+            }
 
             Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
             if (playerRb != null) playerRb.linearVelocity = Vector2.zero;
@@ -681,7 +1000,7 @@ public class SecondEventGhost : MonoBehaviour
 
         if (Hide != null) Hide.enabled = false;
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSecondsRealtime(2f);
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
@@ -737,6 +1056,11 @@ public class SecondEventGhost : MonoBehaviour
             {
                 player_Target = player.transform;
             }
+        }
+
+        if (playerMovement == null && player_Target != null)
+        {
+            playerMovement = player_Target.GetComponent<SideScrollMovement>();
         }
 
         if (Hide == null)

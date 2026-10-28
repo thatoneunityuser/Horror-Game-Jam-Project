@@ -21,6 +21,7 @@ public class Hided : MonoBehaviour
     public bool JustHid => (Time.time - lastHideTime) <= 0.5f;
 
     private Coroutine hideTimerCoroutine;
+    private Animator PlayerAnimator;
 
     void Start()
     {
@@ -42,8 +43,26 @@ public class Hided : MonoBehaviour
 
     public void SetHide(bool hide)
     {
+        if (Hider == null)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                Hider = player;
+            }
+        }
+
+        if (Hider != null)
+        {
+            PlayerAnimator = Hider.GetComponent<Animator>();
+        }
+
         isPlayerHide = hide;
         lastHideTime = Time.time;
+        if (PlayerAnimator != null)
+        {
+            PlayerAnimator.SetBool("isMoving", false);
+        }
 
         if (HiderSprite == null && Hider != null)
         {
@@ -53,6 +72,7 @@ public class Hided : MonoBehaviour
         if (HiderSprite != null)
         {
             HiderSprite.sortingOrder = isPlayerHide ? 2 : 5;
+            
         }
 
         // Cancel previous timer

@@ -16,6 +16,8 @@ public class RoomCounter : MonoBehaviour
     public SummonTheEntityByRandom entitySpawner;
     [Tooltip("If true, every generated room ALSO decreases the entity countdown. Leave OFF when using CooldownDecreaser, otherwise one room counts 2x.")]
     public bool decreaseCountdownOnRoomGenerate = false;
+    [Tooltip("Amount to increase entity summon rate (spawn chance percentage) each time a room is passed")]
+    public int summonRateIncreasePerRoom = 2;
 
     [Header("Event 1 / Forced Rooms")]
     [Tooltip("Event rooms that will force spawn in sequential order by index")]
@@ -139,6 +141,19 @@ public class RoomCounter : MonoBehaviour
 
         PassedRoomCount++;
         generatedRoomCount = currentRooms.Count;
+
+        // When passed room count increases, increase summon rate by 2 on all spawners
+        SummonTheEntityByRandom[] allSpawners = FindObjectsOfType<SummonTheEntityByRandom>();
+        if (allSpawners != null)
+        {
+            foreach (var spawner in allSpawners)
+            {
+                if (spawner != null)
+                {
+                    spawner.IncreaseSummonRate(summonRateIncreasePerRoom);
+                }
+            }
+        }
 
         // Check if THIS newly generated room is a stair room
         latestGeneratedRoomIsStair = (room.GetComponentInChildren<StairColliderLogic>() != null ||

@@ -22,9 +22,11 @@ public class RushEntity : MonoBehaviour
 
     private Hided hideStatus;
     private Transform playerTransform;
+    private float currentLifeTimer;
 
     void Start()
     {
+        currentLifeTimer = lifetime;
         hideStatus = FindObjectOfType<Hided>();
         
         if (audioSource == null)
@@ -43,12 +45,20 @@ public class RushEntity : MonoBehaviour
         {
             playerTransform = player.transform;
         }
-
-        Destroy(gameObject, lifetime);
     }
 
     void LateUpdate()
     {
+        // When killing the player, halt movement and pause despawn timer so the scene reset coroutine is never cancelled
+        if (isKillingPlayer) return;
+
+        currentLifeTimer -= Time.deltaTime;
+        if (currentLifeTimer <= 0f)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         if(IsReversal)
         {
             transform.Translate(Vector2.left * Speed * Time.deltaTime);
@@ -97,7 +107,8 @@ public class RushEntity : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
+        bool isPlayer = other.CompareTag("Player") || (other.transform.root != null && other.transform.root.CompareTag("Player"));
+        if (isPlayer)
         {
             if (hideStatus == null)
             {
@@ -125,32 +136,41 @@ public class RushEntity : MonoBehaviour
     {
         isKillingPlayer = true;
 
-        // Disable collider so it doesn't trigger multiple times while rushing past
-        Collider2D col = GetComponent<Collider2D>();
-        if (col != null) col.enabled = false;
+        // Disable all colliders on this entity so it doesn't trigger multiple times
+        Collider2D[] allCols = GetComponentsInChildren<Collider2D>();
+        foreach (var c in allCols)
+        {
+            if (c != null) c.enabled = false;
+        }
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
-            Animator anim = player.GetComponent<Animator>();
-            if (anim == null) anim = player.GetComponentInChildren<Animator>();
-            if (anim != null)
-            {
-                if (anim.HasState(0, Animator.StringToHash("Die"))) anim.Play("Die");
-                else if (anim.HasState(0, Animator.StringToHash("Dead"))) anim.Play("Dead");
-                else anim.Play("Die");
-            }
-
             SideScrollMovement movement = player.GetComponent<SideScrollMovement>();
-            if (movement != null) movement.enabled = false;
+            if (movement != null)
+            {
+                // Delegate guaranteed death handling to player so despawning of the entity cannot stop the reset
+                movement.KillPlayer(2f);
+            }
+            else
+            {
+                Animator anim = player.GetComponent<Animator>();
+                if (anim == null) anim = player.GetComponentInChildren<Animator>();
+                if (anim != null)
+                {
+                    if (anim.HasState(0, Animator.StringToHash("Die"))) anim.Play("Die");
+                    else if (anim.HasState(0, Animator.StringToHash("Dead"))) anim.Play("Dead");
+                    else anim.Play("Die");
+                }
 
-            Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
-            if (playerRb != null) playerRb.linearVelocity = Vector2.zero;
+                Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+                if (playerRb != null) playerRb.linearVelocity = Vector2.zero;
+            }
         }
 
         if (hideStatus != null) hideStatus.enabled = false;
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSecondsRealtime(2f);
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

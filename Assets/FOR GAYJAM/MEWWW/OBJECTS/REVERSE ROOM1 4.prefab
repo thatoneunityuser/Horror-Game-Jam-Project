@@ -233,6 +233,7 @@ MonoBehaviour:
   spatialBlend: 1
   minDistance: 10
   maxDistance: 35
+  SideScrollMovement: {fileID: 0}
 --- !u!1 &368995584027564195
 GameObject:
   m_ObjectHideFlags: 0
@@ -11150,6 +11151,7 @@ MonoBehaviour:
   spatialBlend: 1
   minDistance: 10
   maxDistance: 35
+  SideScrollMovement: {fileID: 0}
 --- !u!1 &3097713320134318239
 GameObject:
   m_ObjectHideFlags: 0
@@ -31692,6 +31694,7 @@ MonoBehaviour:
   spatialBlend: 1
   minDistance: 10
   maxDistance: 35
+  SideScrollMovement: {fileID: 0}
 --- !u!1 &6645979799144358897
 GameObject:
   m_ObjectHideFlags: 0
@@ -32305,9 +32308,9 @@ MonoBehaviour:
   EventRooms2: []
   changeFirstEventRoom: 0
   alternateFirstEventRoom: {fileID: 7601628479252114360, guid: a93bbb39aeea0264b91d782ba6af1aec, type: 3}
-  snapshotroomchace: 3
+  snapshotroomchace: 10
   randomstairstairroom: 5
-  normalroomchace: 97
+  normalroomchace: 90
   LastRoom: {fileID: 7601628479252114360, guid: 9722a9d5a5f43bb499b421607239c818, type: 3}
   spawnPoint: {fileID: 2438168481082838126}
   chainCooldown: 0.5
@@ -37353,7 +37356,7 @@ Transform:
   m_GameObject: {fileID: 8416970789802567600}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -13.710001, y: -2.69, z: 0}
+  m_LocalPosition: {x: 30, y: -2.69, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -37377,9 +37380,10 @@ MonoBehaviour:
   spawnPoint: {fileID: 732069263116182602}
   Spawnable: 0
   spawnChancePercentage: 33
-  minRooms: 3
-  maxRooms: 4
+  minRooms: 2
+  maxRooms: 3
   CountDown: 3
+  CantChange: 0
   SummonOnce: 0
   preventBlindedEntityOnStairRoom: 1
   delaySpawnIfBlockedByStair: 0

@@ -143,6 +143,7 @@ MonoBehaviour:
   minRooms: 1
   maxRooms: 1
   CountDown: 1
+  CantChange: 1
   SummonOnce: 1
   preventBlindedEntityOnStairRoom: 1
   delaySpawnIfBlockedByStair: 0

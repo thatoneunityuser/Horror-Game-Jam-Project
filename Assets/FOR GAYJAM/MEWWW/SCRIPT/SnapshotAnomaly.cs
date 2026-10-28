@@ -40,10 +40,15 @@ public class SnapshotAnomaly : MonoBehaviour
     private ColorAdjustments colorAdjustments;
 
     private Coroutine anomalyCoroutine;
+    private FLASHLIGHT playerFlashlight;
+    private Hided[] hideds;
+    private FloatingInteractPrompt[] floatingInteractPrompts;
+    private bool isUtilitiesDebuffed = false;
 
     void Awake()
     {
         InitVolume();
+        FindReferencesIfNeeded();
     }
 
     void Start()
@@ -59,6 +64,27 @@ public class SnapshotAnomaly : MonoBehaviour
         anomalyCoroutine = StartCoroutine(SnapshotAnomalyRoutine());
 
         SetupAndRandomizeSafeAreas();
+    }
+
+    private void FindReferencesIfNeeded()
+    {
+        if (playerFlashlight == null)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                playerFlashlight = player.GetComponentInChildren<FLASHLIGHT>();
+            }
+            if (playerFlashlight == null)
+            {
+                playerFlashlight = FindObjectOfType<FLASHLIGHT>();
+            }
+        }
+
+        if (hideds == null || hideds.Length == 0)
+        {
+            hideds = FindObjectsOfType<Hided>();
+        }
     }
 
     void SetupAndRandomizeSafeAreas()
@@ -81,8 +107,9 @@ public class SnapshotAnomaly : MonoBehaviour
             }
         }
 
-        // 2. Randomly destroy safe areas without risks of infinite loops or duplicate picks
-        int countToDestroy = Mathf.Min(safeAreasToDestroy, availableAreas.Count);
+        // 2. Randomly destroy safe areas without destroying all of them (keep at least 1 safe area alive)
+        int maxCanDestroy = Mathf.Max(0, availableAreas.Count - 1);
+        int countToDestroy = Mathf.Clamp(safeAreasToDestroy, 0, maxCanDestroy);
         for (int i = 0; i < countToDestroy; i++)
         {
             int randomIndex = Random.Range(0, availableAreas.Count);
@@ -108,15 +135,19 @@ public class SnapshotAnomaly : MonoBehaviour
             }
         }
 
-        if (snapshotVolume != null && snapshotVolume.profile != null)
+        if (snapshotVolume != null)
         {
-            if (!snapshotVolume.profile.TryGet(out colorAdjustments))
+            VolumeProfile profile = snapshotVolume.profile != null ? snapshotVolume.profile : snapshotVolume.sharedProfile;
+            if (profile != null)
             {
-                colorAdjustments = snapshotVolume.profile.Add<ColorAdjustments>(true);
-            }
+                if (!profile.TryGet(out colorAdjustments))
+                {
+                    colorAdjustments = profile.Add<ColorAdjustments>(true);
+                }
 
-            colorAdjustments.postExposure.overrideState = true;
-            colorAdjustments.postExposure.value = 0f;
+                colorAdjustments.postExposure.overrideState = true;
+                colorAdjustments.postExposure.value = 0f;
+            }
         }
     }
 
@@ -193,16 +224,19 @@ public class SnapshotAnomaly : MonoBehaviour
     }
 
     /// <summary>
-    /// Applies Post Exposure = 6 and smoothly recovers to 0 using Lerp over SnapShotDebufftime.
+    /// Applies Post Exposure debuff, smoothly recovers to 0 over SnapShotDebufftime,
+    /// and temporarily disables player utilities (Flashlight, Hiding, Interaction Prompts).
     /// </summary>
     IEnumerator ApplyDebuffRoutine()
     {
         if (colorAdjustments == null) yield break;
 
-        // Quick flash up to debuffPostExposure (6)
+        // Quick flash up to debuffPostExposure
         float flashDuration = 0.08f;
         float timer = 0f;
         float startExposure = colorAdjustments.postExposure.value;
+        float utilitiesDebuffDuration = SnapShotDebufftime * 2f;
+
         while (timer < flashDuration)
         {
             timer += Time.deltaTime;
@@ -212,7 +246,10 @@ public class SnapshotAnomaly : MonoBehaviour
         }
         colorAdjustments.postExposure.value = debuffPostExposure;
 
-        // Smoothly fade back down to 0 over SnapShotDebufftime
+        // Disable player utilities once at the beginning of debuff
+        SetUtilitiesDisabled(true);
+
+        // Smoothly fade post exposure back down to 0 over SnapShotDebufftime
         timer = 0f;
         while (timer < SnapShotDebufftime)
         {
@@ -221,8 +258,77 @@ public class SnapshotAnomaly : MonoBehaviour
             colorAdjustments.postExposure.value = Mathf.Lerp(debuffPostExposure, 0f, t);
             yield return null;
         }
-
         colorAdjustments.postExposure.value = 0f;
+
+        // Wait for remaining utilities debuff duration (total utilities debuff is 2x debuff time)
+        float remainingUtilitiesDuration = utilitiesDebuffDuration - SnapShotDebufftime;
+        if (remainingUtilitiesDuration > 0f)
+        {
+            yield return new WaitForSeconds(remainingUtilitiesDuration);
+        }
+
+        // Restore all player utilities
+        SetUtilitiesDisabled(false);
+    }
+
+    /// <summary>
+    /// Disables or restores player flashlight, hiding capability, and interaction prompts.
+    /// </summary>
+    private void SetUtilitiesDisabled(bool disabled)
+    {
+        isUtilitiesDebuffed = disabled;
+        FindReferencesIfNeeded();
+
+        // 1. Flashlight
+        if (playerFlashlight != null)
+        {
+            playerFlashlight.enabled = !disabled;
+            if (disabled && playerFlashlight.Flashlight != null)
+            {
+                playerFlashlight.Flashlight.SetActive(false);
+            }
+        }
+        if (FlashlightUI.Instance != null)
+        {
+            if (disabled)
+            {
+                FlashlightUI.Instance.SetFlashlight(false);
+            }
+            FlashlightUI.Instance.enabled = !disabled;
+        }
+
+        // 2. Hiding
+        if (hideds != null)
+        {
+            foreach (Hided h in hideds)
+            {
+                if (h != null)
+                {
+                    if (disabled)
+                    {
+                        h.IsPlayerHide = false;
+                    }
+                    h.enabled = !disabled;
+                }
+            }
+        }
+
+        // 3. Floating Interaction Prompts
+        floatingInteractPrompts = FindObjectsOfType<FloatingInteractPrompt>();
+        if (floatingInteractPrompts != null)
+        {
+            foreach (FloatingInteractPrompt prompt in floatingInteractPrompts)
+            {
+                if (prompt != null)
+                {
+                    if (disabled)
+                    {
+                        prompt.HidePrompt();
+                    }
+                    prompt.enabled = !disabled;
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -268,7 +374,7 @@ public class SnapshotAnomaly : MonoBehaviour
         SnapShotSafeArea[] allSafeAreas = FindObjectsOfType<SnapShotSafeArea>();
         foreach (SnapShotSafeArea area in allSafeAreas)
         {
-            if (area != null && area.IsInside(playerPos))
+            if (area != null && area.gameObject.activeInHierarchy && area.IsInside(playerPos))
             {
                 return true;
             }
@@ -280,11 +386,19 @@ public class SnapshotAnomaly : MonoBehaviour
     void OnDisable()
     {
         ResetPostExposure();
+        if (isUtilitiesDebuffed)
+        {
+            SetUtilitiesDisabled(false);
+        }
     }
 
     void OnDestroy()
     {
         ResetPostExposure();
+        if (isUtilitiesDebuffed)
+        {
+            SetUtilitiesDisabled(false);
+        }
     }
 
     private void ResetPostExposure()

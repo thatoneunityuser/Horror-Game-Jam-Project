@@ -83,6 +83,8 @@ public class BlindedEntity : MonoBehaviour
 
     void UpdateLifeTimer()
     {
+        if (isKillingPlayer) return;
+
         // Lifetime countdown only ticks down while running away.
         // Paused while Suspicious (investigating) or Detected (chasing) so entity doesn't despawn mid-encounter!
         if (currentState == State.RunAway)
@@ -456,6 +458,12 @@ public class BlindedEntity : MonoBehaviour
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
+            SideScrollMovement movement = player.GetComponent<SideScrollMovement>();
+            if (movement != null)
+            {
+                movement.KillPlayer(2f);
+            }
+
             PlayerAnimator = player.GetComponent<Animator>();
             if (PlayerAnimator == null)
             {
@@ -472,7 +480,6 @@ public class BlindedEntity : MonoBehaviour
                     PlayerAnimator.Play("Die");
             }
 
-            SideScrollMovement movement = player.GetComponent<SideScrollMovement>();
             if (movement != null)
             {
                 movement.enabled = false;
@@ -488,7 +495,7 @@ public class BlindedEntity : MonoBehaviour
         if (playerHided != null) playerHided.enabled = false;
         if (playerMovement != null) playerMovement.enabled = false;
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSecondsRealtime(2f);
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
