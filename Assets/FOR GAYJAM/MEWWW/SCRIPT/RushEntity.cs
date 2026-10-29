@@ -45,6 +45,7 @@ public class RushEntity : MonoBehaviour
     void Start()
     {
         ActiveEntities.Add(this);
+        RoomCounter.NotifyEntityAppeared(gameObject);
         currentLifeTimer = lifetime;
         hideStatus = FindObjectOfType<Hided>();
         
@@ -74,6 +75,7 @@ public class RushEntity : MonoBehaviour
         currentLifeTimer -= Time.deltaTime;
         if (currentLifeTimer <= 0f)
         {
+            RoomCounter.NotifyEntityDisappearing(gameObject);
             Destroy(gameObject);
             return;
         }

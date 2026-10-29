@@ -73,6 +73,7 @@ public class BlindedEntity : MonoBehaviour
     void Start()
     {
         ActiveEntities.Add(this);
+        RoomCounter.NotifyEntityAppeared(gameObject);
         FindPlayerReferencesIfNeeded();
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (animator == null)
@@ -110,6 +111,7 @@ public class BlindedEntity : MonoBehaviour
             currentLifeTimer -= Time.deltaTime;
             if (currentLifeTimer <= 0f)
             {
+                RoomCounter.NotifyEntityDisappearing(gameObject);
                 Destroy(gameObject);
             }
         }
@@ -141,6 +143,55 @@ public class BlindedEntity : MonoBehaviour
         return isPlayerHidingThatTime || justHidInScript;
     }
 
+    Locker GetPlayerLocker()
+    {
+        Locker[] allLockers = FindObjectsOfType<Locker>();
+        if (allLockers != null)
+        {
+            for (int i = 0; i < allLockers.Length; i++)
+            {
+                if (allLockers[i] != null && allLockers[i].IsPlayerInsideThisLocker)
+                {
+                    return allLockers[i];
+                }
+            }
+        }
+        return null;
+    }
+
+    public void PullPlayerOutOfLocker(Locker locker = null)
+    {
+        if (locker == null)
+        {
+            locker = GetPlayerLocker();
+        }
+
+        if (locker != null)
+        {
+            if (locker.animator != null)
+            {
+                locker.animator.Play("Locker Interacted");
+            }
+            else
+            {
+                Animator anim = locker.GetComponent<Animator>();
+                if (anim == null) anim = locker.GetComponentInChildren<Animator>();
+                if (anim != null)
+                {
+                    anim.Play("Locker Interacted");
+                }
+            }
+        }
+
+        FindPlayerReferencesIfNeeded();
+        if (playerHided != null)
+        {
+            playerHided.IsPlayerHide = false;
+        }
+
+        Debug.Log("[BlindedEntity] Detected player inside locker! Pulled player out of locker ('Locker Interacted' + IsPlayerHide = false).");
+    }
+
     void UpdateState()
     {
         if (isKillingPlayer)
@@ -158,16 +209,48 @@ public class BlindedEntity : MonoBehaviour
         FindPlayerReferencesIfNeeded();
 
         bool isPlayerHidden = playerHided != null && playerHided.IsPlayerHide;
-        // Hidden players are stationary and silent inside lockers
-        bool isPlayerMoving = playerMovement != null && playerMovement.isMoving && !isPlayerHidden;
-        bool isPlayerHideNow = IsPlayerHideThatTime();
-        bool isPlayerCrawling = playerMovement != null && playerMovement.isCrawling;
+        Locker occupiedLocker = isPlayerHidden ? GetPlayerLocker() : null;
+        if (occupiedLocker != null) isPlayerHidden = true;
+
+        // Player is crawling / crouching (completely silent to Blinded Entity)
+        bool isCrawlInputHeld = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl) || Input.GetKey(KeyCode.C);
+        bool isMovementCrawling = (playerMovement != null && playerMovement.isCrawling);
+        bool isPlayerCrawling = isCrawlInputHeld || isMovementCrawling;
+
+        // Player is walking or running (making audible footsteps that Blinded Entity can hear)
+        // Must NEVER be true while crawling or crouching!
+        bool isPlayerWalkingOrRunning = false;
+        if (playerMovement != null && !isPlayerHidden && !isPlayerCrawling)
+        {
+            float hInput = Mathf.Abs(Input.GetAxisRaw("Horizontal"));
+            bool isActivelyMovingHorizontal = hInput > 0.1f;
+
+            if (playerMovement.isSprinting)
+            {
+                isPlayerWalkingOrRunning = true;
+            }
+            else if (isActivelyMovingHorizontal && playerMovement.isMoving)
+            {
+                isPlayerWalkingOrRunning = true;
+            }
+        }
+
+        bool inLockerRange = IsPlayerInLockerRange();
+        if (!inLockerRange && occupiedLocker != null)
+        {
+            inLockerRange = Vector2.Distance(transform.position, occupiedLocker.transform.position) <= LockerSensingRange;
+        }
 
         // 2. Detected takes highest priority:
-        // Close range movement OR player enters/interacts with locker within locker range
-        if ((IsPlayerInMovementRange() && isPlayerMoving && !isPlayerCrawling) || (IsPlayerInLockerRange() && isPlayerHidden && isPlayerHideNow))
+        // Close range walking/running (MovementSensingRange) OR player staying in locker within locker sensing range
+        if ((IsPlayerInMovementRange() && isPlayerWalkingOrRunning) || (inLockerRange && isPlayerHidden))
         {
             currentState = State.Detected;
+
+            if (isPlayerHidden)
+            {
+                PullPlayerOutOfLocker(occupiedLocker);
+            }
 
             if (isChecking && checkingCoroutine != null)
             {
@@ -187,8 +270,8 @@ public class BlindedEntity : MonoBehaviour
             return;
         }
 
-        // 4. If in RunAway, check if player makes noise (Suspect Range + moving)
-        if (IsPlayerInSuspectRange() && isPlayerMoving && !isPlayerCrawling)
+        // 4. If in RunAway, check if player makes noise in Suspect Range (only detects walking or running)
+        if (IsPlayerInSuspectRange() && isPlayerWalkingOrRunning)
         {
             currentState = State.Suspicious;
         }
@@ -216,11 +299,20 @@ public class BlindedEntity : MonoBehaviour
 
     void RunAway()
     {
-        // Ensure entity faces to the right while running away to the right
-        if (transform.localScale.x < 0f)
+        if (isKillingPlayer)
         {
-            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+            // When entity punched player and player died: look at player while running away!
+            FacePlayer();
         }
+        else
+        {
+            // Ensure entity faces to the right while running away to the right
+            if (transform.localScale.x < 0f)
+            {
+                transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+            }
+        }
+
         if(IsReversal)
         {
             transform.position += Vector3.left * runAwaySpeed * Time.deltaTime;
@@ -286,9 +378,6 @@ public class BlindedEntity : MonoBehaviour
             PlayDetectedSound();
         }
 
-      
-  
-
         // Don't slide while attacking
         if (isAttacking)
         {
@@ -312,7 +401,6 @@ public class BlindedEntity : MonoBehaviour
         }
         else
         {
-            
             float dirX = GetDirectionToPlayerX();
             Vector3 moveDir = new Vector3(dirX, 0f, 0f);
 
@@ -342,10 +430,10 @@ public class BlindedEntity : MonoBehaviour
         isChecking = true;
         yield return new WaitForSeconds(5f);
         isChecking = false;
-         if(IsReversal)
-                {
-                    spriteRenderer.flipX = true;
-                }
+        if(IsReversal)
+        {
+            spriteRenderer.flipX = true;
+        }
         currentState = State.RunAway;
     }
 
@@ -461,13 +549,36 @@ public class BlindedEntity : MonoBehaviour
     {
         if (isKillingPlayer) return;
         isKillingPlayer = true;
+        MuteScreamSound();
+        PullPlayerOutOfLocker();
         StartCoroutine(PlayerDieCoroutine());
+    }
+
+    public void MuteScreamSound()
+    {
+        hasPlayedDetectedSound = true;
+        if (screamAudioSource != null)
+        {
+            screamAudioSource.Stop();
+            screamAudioSource.mute = true;
+        }
+        if (audioSource != null)
+        {
+            if (audioSource.clip == DetectedSound || audioSource.isPlaying)
+            {
+                audioSource.Stop();
+            }
+            audioSource.mute = true;
+        }
     }
 
     IEnumerator PlayerDieCoroutine()
     {
         currentState = State.RunAway;
         isAttacking = false;
+        MuteScreamSound();
+        FacePlayer();
+
         if (animator != null)
         {
             animator.SetBool("IsMoving", true);
@@ -609,7 +720,7 @@ public class BlindedEntity : MonoBehaviour
 
     public void PlayDetectedSound()
     {
-        if (hasPlayedDetectedSound) return;
+        if (hasPlayedDetectedSound || isKillingPlayer) return;
         hasPlayedDetectedSound = true;
 
         AudioSource source = screamAudioSource != null ? screamAudioSource : audioSource;

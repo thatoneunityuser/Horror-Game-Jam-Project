@@ -39,6 +39,30 @@ public class SnapshotAnomaly : MonoBehaviour
     public Volume snapshotVolume;
     private ColorAdjustments colorAdjustments;
 
+    [Header("State Status")]
+    [Tooltip("Is this snapshot anomaly currently in its countdown phase before snapshot")]
+    public bool isThisCountingDown = false;
+
+    [Tooltip("Has this snapshot anomaly reached timeout and snapshotted")]
+    public bool isThisSnapshotted = false;
+
+    public bool hasSnapshotted => isThisSnapshotted;
+    public bool isCountingDownInstance => isThisCountingDown;
+
+    // Static tracking across all SnapshotAnomaly instances in scene for HorrorWarningSignUI or other scripts
+    private static readonly HashSet<SnapshotAnomaly> activeAnomalies = new HashSet<SnapshotAnomaly>();
+
+    public static bool isSnapshotted { get; private set; } = false;
+    public static bool isCountingDown { get; private set; } = false;
+    public static bool IsSnapshotted => isSnapshotted;
+    public static bool IsCountingDown => isCountingDown;
+    public static bool isTimeout => isSnapshotted;
+    public static bool isNotSnapshotted => !isSnapshotted && isCountingDown;
+
+    public static bool IsAnyCountingDown() => isCountingDown;
+    public static bool IsAnySnapshotted() => isSnapshotted;
+    public static bool IsAnyActive() => activeAnomalies.Count > 0;
+
     private Coroutine anomalyCoroutine;
     private FLASHLIGHT playerFlashlight;
     private Hided[] hideds;
@@ -51,6 +75,11 @@ public class SnapshotAnomaly : MonoBehaviour
         FindReferencesIfNeeded();
     }
 
+    void OnEnable()
+    {
+        RegisterAnomaly(this);
+    }
+
     void Start()
     {
         if (tickeverySecond <= 0f) tickeverySecond = 1f;
@@ -61,9 +90,58 @@ public class SnapshotAnomaly : MonoBehaviour
             InitVolume();
         }
 
+        isThisCountingDown = true;
+        isThisSnapshotted = false;
+        UpdateStaticStates();
+
         anomalyCoroutine = StartCoroutine(SnapshotAnomalyRoutine());
 
         SetupAndRandomizeSafeAreas();
+    }
+
+    private static void RegisterAnomaly(SnapshotAnomaly anomaly)
+    {
+        if (anomaly != null)
+        {
+            activeAnomalies.Add(anomaly);
+            UpdateStaticStates();
+        }
+    }
+
+    private static void UnregisterAnomaly(SnapshotAnomaly anomaly)
+    {
+        if (anomaly != null)
+        {
+            activeAnomalies.Remove(anomaly);
+            UpdateStaticStates();
+        }
+    }
+
+    private static void UpdateStaticStates()
+    {
+        activeAnomalies.RemoveWhere(a => a == null);
+
+        if (activeAnomalies.Count == 0)
+        {
+            isSnapshotted = false;
+            isCountingDown = false;
+            return;
+        }
+
+        bool anyCounting = false;
+        bool anySnapshotted = false;
+
+        foreach (var a in activeAnomalies)
+        {
+            if (a != null && a.gameObject.activeInHierarchy)
+            {
+                if (a.isThisCountingDown) anyCounting = true;
+                if (a.isThisSnapshotted) anySnapshotted = true;
+            }
+        }
+
+        isCountingDown = anyCounting;
+        isSnapshotted = anySnapshotted;
     }
 
     private void FindReferencesIfNeeded()
@@ -153,6 +231,10 @@ public class SnapshotAnomaly : MonoBehaviour
 
     IEnumerator SnapshotAnomalyRoutine()
     {
+        isThisCountingDown = true;
+        isThisSnapshotted = false;
+        UpdateStaticStates();
+
         float elapsed = 0f;
         float actualWinkDuration = Mathf.Clamp(tickduration, 0.05f, tickeverySecond * 0.9f);
 
@@ -171,6 +253,11 @@ public class SnapshotAnomaly : MonoBehaviour
                 yield return new WaitForSeconds(Mathf.Min(waitTime, remaining));
             }
         }
+
+        // Time's up: Snapshotted (timed out)!
+        isThisCountingDown = false;
+        isThisSnapshotted = true;
+        UpdateStaticStates();
 
         // Time's up: Check if player stayed inside a safe area
         bool isSafe = IsPlayerInSafeArea();
@@ -283,17 +370,21 @@ public class SnapshotAnomaly : MonoBehaviour
         if (playerFlashlight != null)
         {
             playerFlashlight.enabled = !disabled;
-            if (disabled && playerFlashlight.Flashlight != null)
+            playerFlashlight.SetFlashlight(false, false);
+        }
+        else
+        {
+            FLASHLIGHT fl = FindObjectOfType<FLASHLIGHT>();
+            if (fl != null)
             {
-                playerFlashlight.Flashlight.SetActive(false);
+                fl.enabled = !disabled;
+                fl.SetFlashlight(false, false);
             }
         }
+
         if (FlashlightUI.Instance != null)
         {
-            if (disabled)
-            {
-                FlashlightUI.Instance.SetFlashlight(false);
-            }
+            FlashlightUI.Instance.SetFlashlight(false);
             FlashlightUI.Instance.enabled = !disabled;
         }
 
@@ -385,6 +476,7 @@ public class SnapshotAnomaly : MonoBehaviour
 
     void OnDisable()
     {
+        UnregisterAnomaly(this);
         ResetPostExposure();
         if (isUtilitiesDebuffed)
         {
@@ -394,6 +486,7 @@ public class SnapshotAnomaly : MonoBehaviour
 
     void OnDestroy()
     {
+        UnregisterAnomaly(this);
         ResetPostExposure();
         if (isUtilitiesDebuffed)
         {

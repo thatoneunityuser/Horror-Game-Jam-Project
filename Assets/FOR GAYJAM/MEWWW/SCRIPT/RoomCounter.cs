@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Playables;
 
 public class RoomCounter : MonoBehaviour
 {
@@ -41,6 +42,22 @@ public class RoomCounter : MonoBehaviour
     [Tooltip("Alternative prefab for the first forced event room")]
     public GameObject alternateFirstEventRoom;
 
+    [Header("Timeline Prefabs (3 Conditions)")]
+    [Tooltip("Condition 1: Timeline prefab instantiated when the very first entity that appears has disappeared")]
+    public GameObject firstEntityDisappearTimelinePrefab;
+    [Tooltip("Optional spawn point override for Condition 1 Timeline prefab (uses prefab's own position/rotation if null)")]
+    public Transform firstEntityTimelineSpawnPoint;
+
+    [Tooltip("Condition 2: Timeline prefab instantiated when First Event Ghost dies and its die coroutine ends")]
+    public GameObject firstEventGhostDeadTimelinePrefab;
+    [Tooltip("Optional spawn point override for Condition 2 Timeline prefab (uses prefab's own position/rotation if null)")]
+    public Transform firstEventGhostTimelineSpawnPoint;
+
+    [Tooltip("Condition 3: Timeline prefab instantiated when Second Event Ghost disappears from the scene")]
+    public GameObject secondEventGhostDisappearTimelinePrefab;
+    [Tooltip("Optional spawn point override for Condition 3 Timeline prefab (uses prefab's own position/rotation if null)")]
+    public Transform secondEventGhostTimelineSpawnPoint;
+
     [Header("Room Tracking")]
     [Tooltip("The most recently generated room. This room is explicitly protected from ever being treated as a previous room.")]
     public GameObject latestGeneratedRoom;
@@ -51,11 +68,27 @@ public class RoomCounter : MonoBehaviour
     private Dictionary<GameObject, int> roomNumbers = new Dictionary<GameObject, int>();
     private HashSet<GameObject> secondEventRooms = new HashSet<GameObject>();
 
+    // Static per-scene tracking for the 3 timeline conditions
+    private static bool hasFirstEntityAppeared = false;
+    private static bool hasFirstEntityDisappearTimelineTriggered = false;
+    private static GameObject trackedFirstEntity = null;
+    private static GameObject cachedFirstEntityTimelinePrefab = null;
+    private static Transform cachedFirstEntityTimelineSpawnPoint = null;
+
+    private static bool hasFirstEventGhostDeadTimelineTriggered = false;
+
+    private static bool hasSecondEventGhostRegistered = false;
+    private static bool hasSecondEventGhostDisappearTimelineTriggered = false;
+    private static GameObject trackedSecondEventGhost = null;
+    private static GameObject cachedSecondGhostTimelinePrefab = null;
+    private static Transform cachedSecondGhostTimelineSpawnPoint = null;
+
     void Awake()
     {
         if (instance == null)
         {
             instance = this;
+            ResetTimelineConditionTracking();
         }
         else if (instance != this)
         {
@@ -131,6 +164,216 @@ public class RoomCounter : MonoBehaviour
             currentRooms.RemoveAt(removeIdx);
         }
         generatedRoomCount = currentRooms.Count;
+
+        UpdateTimelineConditionWatchers();
+    }
+
+    // ==========================================
+    // TIMELINE PREFAB INSTANTIATION (3 CONDITIONS)
+    // ==========================================
+
+    public static void ResetTimelineConditionTracking()
+    {
+        hasFirstEntityAppeared = false;
+        hasFirstEntityDisappearTimelineTriggered = false;
+        trackedFirstEntity = null;
+        cachedFirstEntityTimelinePrefab = null;
+        cachedFirstEntityTimelineSpawnPoint = null;
+
+        hasFirstEventGhostDeadTimelineTriggered = false;
+
+        hasSecondEventGhostRegistered = false;
+        hasSecondEventGhostDisappearTimelineTriggered = false;
+        trackedSecondEventGhost = null;
+        cachedSecondGhostTimelinePrefab = null;
+        cachedSecondGhostTimelineSpawnPoint = null;
+    }
+
+    public static void UpdateTimelineConditionWatchers()
+    {
+        // Condition 1: First entity that appeared has disappeared from the scene
+        if (hasFirstEntityAppeared && !hasFirstEntityDisappearTimelineTriggered && trackedFirstEntity == null)
+        {
+            TriggerFirstEntityDisappearedTimeline(cachedFirstEntityTimelinePrefab, cachedFirstEntityTimelineSpawnPoint);
+        }
+
+        // Condition 3: Second Event Ghost disappeared from the scene
+        if (hasSecondEventGhostRegistered && !hasSecondEventGhostDisappearTimelineTriggered && trackedSecondEventGhost == null)
+        {
+            TriggerSecondEventGhostDisappearedTimeline(cachedSecondGhostTimelinePrefab, cachedSecondGhostTimelineSpawnPoint);
+        }
+    }
+
+    public static GameObject InstantiateTimelinePrefab(GameObject prefab, Transform spawnPointOverride = null)
+    {
+        if (prefab == null) return null;
+
+        Vector3 pos = spawnPointOverride != null ? spawnPointOverride.position : prefab.transform.position;
+        Quaternion rot = spawnPointOverride != null ? spawnPointOverride.rotation : prefab.transform.rotation;
+
+        GameObject instance = Instantiate(prefab, pos, rot);
+        if (!instance.activeSelf)
+        {
+            instance.SetActive(true);
+        }
+
+        PlayableDirector[] directors = instance.GetComponentsInChildren<PlayableDirector>(true);
+        if (directors != null)
+        {
+            for (int i = 0; i < directors.Length; i++)
+            {
+                if (directors[i] != null && directors[i].gameObject.activeInHierarchy && directors[i].state != PlayState.Playing)
+                {
+                    directors[i].Play();
+                }
+            }
+        }
+
+        return instance;
+    }
+
+    /// <summary>
+    /// Condition 1 Registration: Tracks the very first entity that appears in the scene.
+    /// </summary>
+    public static void NotifyEntityAppeared(GameObject entityObj, GameObject localTimelinePrefab = null, Transform localSpawnPoint = null)
+    {
+        if (entityObj == null) return;
+
+        if (localTimelinePrefab != null && cachedFirstEntityTimelinePrefab == null)
+        {
+            cachedFirstEntityTimelinePrefab = localTimelinePrefab;
+        }
+        if (localSpawnPoint != null && cachedFirstEntityTimelineSpawnPoint == null)
+        {
+            cachedFirstEntityTimelineSpawnPoint = localSpawnPoint;
+        }
+
+        if (!hasFirstEntityAppeared)
+        {
+            hasFirstEntityAppeared = true;
+            trackedFirstEntity = entityObj;
+            Debug.Log($"[TimelineConditions] Registered first entity that appeared: '{entityObj.name}'.");
+        }
+    }
+
+    /// <summary>
+    /// Called right when an entity despawns naturally (e.g. lifetime expired).
+    /// If it was the very first entity that appeared in the scene, triggers Condition 1 Timeline immediately.
+    /// </summary>
+    public static void NotifyEntityDisappearing(GameObject entityObj)
+    {
+        if (entityObj == null) return;
+        if (hasFirstEntityAppeared && !hasFirstEntityDisappearTimelineTriggered && trackedFirstEntity == entityObj)
+        {
+            TriggerFirstEntityDisappearedTimeline(cachedFirstEntityTimelinePrefab, cachedFirstEntityTimelineSpawnPoint);
+        }
+    }
+
+    /// <summary>
+    /// Condition 1 Trigger: Instantiates the First Entity Disappeared Timeline prefab (runs at most once).
+    /// </summary>
+    public static void TriggerFirstEntityDisappearedTimeline(GameObject localTimelinePrefab = null, Transform localSpawnPoint = null)
+    {
+        if (hasFirstEntityDisappearTimelineTriggered) return;
+        hasFirstEntityDisappearTimelineTriggered = true;
+
+        GameObject prefabToSpawn = localTimelinePrefab;
+        if (prefabToSpawn == null) prefabToSpawn = cachedFirstEntityTimelinePrefab;
+        if (prefabToSpawn == null && AnomalyCheck.instance != null) prefabToSpawn = AnomalyCheck.instance.firstEntityDisappearTimelinePrefab;
+        if (prefabToSpawn == null && instance != null) prefabToSpawn = instance.firstEntityDisappearTimelinePrefab;
+
+        Transform spawnPoint = localSpawnPoint;
+        if (spawnPoint == null) spawnPoint = cachedFirstEntityTimelineSpawnPoint;
+        if (spawnPoint == null && AnomalyCheck.instance != null) spawnPoint = AnomalyCheck.instance.firstEntityTimelineSpawnPoint;
+        if (spawnPoint == null && instance != null) spawnPoint = instance.firstEntityTimelineSpawnPoint;
+
+        if (prefabToSpawn != null)
+        {
+            GameObject spawned = InstantiateTimelinePrefab(prefabToSpawn, spawnPoint);
+            Debug.Log($"[TimelineConditions] Condition 1 met (First entity disappeared) -> Instantiated Timeline prefab '{spawned.name}'!");
+        }
+        else
+        {
+            Debug.Log("[TimelineConditions] Condition 1 met (First entity disappeared), but no Timeline prefab is assigned.");
+        }
+    }
+
+    /// <summary>
+    /// Condition 2 Trigger: Instantiates the First Event Ghost Dead Timeline prefab when DiesRoutine() ends (runs at most once).
+    /// </summary>
+    public static void TriggerFirstEventGhostDeadTimeline(GameObject localTimelinePrefab = null, Transform localSpawnPoint = null)
+    {
+        if (hasFirstEventGhostDeadTimelineTriggered) return;
+        hasFirstEventGhostDeadTimelineTriggered = true;
+
+        GameObject prefabToSpawn = localTimelinePrefab;
+        if (prefabToSpawn == null && instance != null)
+        {
+            prefabToSpawn = instance.firstEventGhostDeadTimelinePrefab;
+        }
+
+        Transform spawnPoint = localSpawnPoint;
+        if (spawnPoint == null && instance != null)
+        {
+            spawnPoint = instance.firstEventGhostTimelineSpawnPoint;
+        }
+
+        if (prefabToSpawn != null)
+        {
+            GameObject spawned = InstantiateTimelinePrefab(prefabToSpawn, spawnPoint);
+            Debug.Log($"[TimelineConditions] Condition 2 met (First Event Ghost died & die enumerator ended) -> Instantiated Timeline prefab '{spawned.name}'!");
+        }
+        else
+        {
+            Debug.Log("[TimelineConditions] Condition 2 met (First Event Ghost died & die enumerator ended), but no Timeline prefab is assigned.");
+        }
+    }
+
+    /// <summary>
+    /// Condition 3 Registration: Registers the Second Event Ghost so its disappearance is tracked.
+    /// </summary>
+    public static void RegisterSecondEventGhost(GameObject ghostObj, GameObject localTimelinePrefab = null, Transform localSpawnPoint = null)
+    {
+        if (ghostObj == null) return;
+
+        hasSecondEventGhostRegistered = true;
+        trackedSecondEventGhost = ghostObj;
+
+        if (localTimelinePrefab != null)
+        {
+            cachedSecondGhostTimelinePrefab = localTimelinePrefab;
+        }
+        if (localSpawnPoint != null)
+        {
+            cachedSecondGhostTimelineSpawnPoint = localSpawnPoint;
+        }
+    }
+
+    /// <summary>
+    /// Condition 3 Trigger: Instantiates the Second Event Ghost Disappeared Timeline prefab (runs at most once).
+    /// </summary>
+    public static void TriggerSecondEventGhostDisappearedTimeline(GameObject localTimelinePrefab = null, Transform localSpawnPoint = null)
+    {
+        if (hasSecondEventGhostDisappearTimelineTriggered) return;
+        hasSecondEventGhostDisappearTimelineTriggered = true;
+
+        GameObject prefabToSpawn = localTimelinePrefab;
+        if (prefabToSpawn == null) prefabToSpawn = cachedSecondGhostTimelinePrefab;
+        if (prefabToSpawn == null && instance != null) prefabToSpawn = instance.secondEventGhostDisappearTimelinePrefab;
+
+        Transform spawnPoint = localSpawnPoint;
+        if (spawnPoint == null) spawnPoint = cachedSecondGhostTimelineSpawnPoint;
+        if (spawnPoint == null && instance != null) spawnPoint = instance.secondEventGhostTimelineSpawnPoint;
+
+        if (prefabToSpawn != null)
+        {
+            GameObject spawned = InstantiateTimelinePrefab(prefabToSpawn, spawnPoint);
+            Debug.Log($"[TimelineConditions] Condition 3 met (Second Event Ghost disappeared from scene) -> Instantiated Timeline prefab '{spawned.name}'!");
+        }
+        else
+        {
+            Debug.Log("[TimelineConditions] Condition 3 met (Second Event Ghost disappeared from scene), but no Timeline prefab is assigned.");
+        }
     }
 
     public bool IsSecondEventRoom(GameObject room)

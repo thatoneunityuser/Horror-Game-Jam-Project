@@ -37,6 +37,12 @@ public class SecondEventGhost : MonoBehaviour
     [Tooltip("If true, automatically destroys this ghost once the player moves past eventEndRoom")]
     public bool autoDespawnAfterEvent = true;
 
+    [Header("Timeline On Disappear")]
+    [Tooltip("Condition 3: Timeline prefab instantiated when SecondEventGhost disappears from the scene")]
+    public GameObject timelinePrefabOnDisappear;
+    [Tooltip("Optional spawn point override for timelinePrefabOnDisappear (uses prefab's own position/rotation if null)")]
+    public Transform timelineSpawnPoint;
+
     [Header("Movement & Speed")]
     public float moveSpeed = 3f;
     [Tooltip("Chase speed multiplier (2x-3x faster by default)")]
@@ -70,10 +76,24 @@ public class SecondEventGhost : MonoBehaviour
     [Tooltip("Number of patrol points to visit in the chosen room before sniffing the pre-chosen lockers")]
     public int patrolSpotsBeforeNextSniff = 2;
 
+    [Header("Patrol Idle Delay")]
+    [Tooltip("Idle delay in seconds before continuing patrol after reaching/touching a patrol spot")]
+    public float patrolSpotIdleDelay = 2.0f;
+    private float patrolSpotIdleTimer = 0f;
+    private bool isWaitingAtPatrolSpot = false;
+
+    [Header("Locker Sniff Kill Chance")]
+    [Range(0, 100)]
+    [Tooltip("Percentage chance to kill the player when sniffing the locker the player is hiding inside (default: 80%)")]
+    public int lockerKillChancePercentage = 80;
+
     [Header("References")]
     public Transform player_Target;
     public Animator animator;
     public AudioSource audioSource;
+    public AudioSource ChaseTheme;
+    public float chaseThemeTargetVolume = 1f;
+    public float chaseThemeFadeSpeed = 6f;
     public AudioClip detectedSound;
     public AudioClip sniffSound;
     public AudioClip attackSound;
@@ -122,6 +142,10 @@ public class SecondEventGhost : MonoBehaviour
     private bool isRushingToKill = false;
     private bool isKillingPlayer = false;
     private Coroutine sniffingCoroutine;
+    private Coroutine chaseThemeFadeCoroutine;
+    private bool isFadingOutChaseTheme = false;
+    private Vector3 lastSeenPlayerPosition;
+    private float lostSightTimer = 0f;
     private int lastCheckedRoomCount = -1;
     private float cachedReferencePatrolY;
     private bool hasReferencePatrolY = false;
@@ -199,6 +223,8 @@ public class SecondEventGhost : MonoBehaviour
 
         // Initialize facing direction based on scale
         facingDirection = transform.localScale.x >= 0 ? 1f : -1f;
+
+        RoomCounter.RegisterSecondEventGhost(gameObject, timelinePrefabOnDisappear, timelineSpawnPoint);
 
         if (RoomCounter.instance == null || IsWithinActiveEventLifecycle())
         {
@@ -336,6 +362,7 @@ public class SecondEventGhost : MonoBehaviour
             if (autoDespawnAfterEvent && currentRoom > eventEndRoom && !HasUnfinishedEventRoom())
             {
                 Debug.Log($"[SecondEventGhost] Player passed second event rooms (count {currentRoom}). Despawning ghost.");
+                RoomCounter.TriggerSecondEventGhostDisappearedTimeline(timelinePrefabOnDisappear, timelineSpawnPoint);
                 Destroy(gameObject);
                 return;
             }
@@ -425,6 +452,12 @@ public class SecondEventGhost : MonoBehaviour
             case GHOST_STATE.CHASE:
                 Chase();
                 break;
+        }
+
+        // When ghost is not chasing, ensure ChaseTheme fades out if it was playing
+        if (ghost_State != GHOST_STATE.CHASE && ChaseTheme != null && (ChaseTheme.isPlaying || ChaseTheme.volume > 0f) && !isFadingOutChaseTheme)
+        {
+            StopChaseTheme();
         }
 
         UpdateAnimator();
@@ -799,6 +832,8 @@ public class SecondEventGhost : MonoBehaviour
             sniffingCoroutine = null;
         }
         isSniffing = false;
+        isWaitingAtPatrolSpot = false;
+        patrolSpotIdleTimer = 0f;
         currentLockerTarget = null;
         lockerToSniff.Clear();
         sniffedLockers.Clear();
@@ -829,6 +864,8 @@ public class SecondEventGhost : MonoBehaviour
             sniffingCoroutine = null;
         }
         isSniffing = false;
+        isWaitingAtPatrolSpot = false;
+        patrolSpotIdleTimer = 0f;
         currentLockerTarget = null;
         lockerToSniff.Clear();
         sniffedLockers.Clear();
@@ -843,6 +880,9 @@ public class SecondEventGhost : MonoBehaviour
 
     private void StartPatrolPhase(int roomNumber = -1)
     {
+        isWaitingAtPatrolSpot = false;
+        patrolSpotIdleTimer = 0f;
+
         int spotsToVisit = Mathf.Max(1, patrolSpotsBeforeNextSniff);
         if (currentRoomPatrolPoints.Count <= 1)
         {
@@ -938,6 +978,44 @@ public class SecondEventGhost : MonoBehaviour
             if (currentRoomPatrolPoints == null || currentRoomPatrolPoints.Count == 0) return;
         }
 
+        // If currently waiting in idle delay at a patrol spot
+        if (isWaitingAtPatrolSpot)
+        {
+            patrolSpotIdleTimer -= Time.deltaTime;
+            if (patrolSpotIdleTimer > 0f)
+            {
+                return; // Remain idle for 2 seconds!
+            }
+
+            // 2-second idle delay finished -> continue patrol!
+            isWaitingAtPatrolSpot = false;
+            patrolSpotIdleTimer = 0f;
+
+            if (isKillingPlayer)
+            {
+                PickRandomPatrolSpot();
+                return;
+            }
+
+            patrolPointsRemainingInCycle--;
+
+            if (patrolPointsRemainingInCycle > 0)
+            {
+                PickRandomPatrolSpot();
+            }
+            else if (isDoingOffRoomExcursion)
+            {
+                // Finished temporary excursion outside single room -> loop back into Step 1 (Choose Room)
+                ChooseNextPatrolRoom(false);
+            }
+            else
+            {
+                // STEP 4: Finished patrolling -> Now finally sniff the locker(s) chosen back in Step 2!
+                StartSniffChosenLockersPhase();
+            }
+            return;
+        }
+
         if (currentPatrolSpot < 0 || currentPatrolSpot >= currentRoomPatrolPoints.Count)
         {
             PickRandomPatrolSpot();
@@ -967,29 +1045,17 @@ public class SecondEventGhost : MonoBehaviour
         // Check if reached current patrol spot horizontally
         if (Mathf.Abs(transform.position.x - targetPos.x) <= reachPointDistance)
         {
-            if (isKillingPlayer)
-            {
-                PickRandomPatrolSpot();
-                return;
-            }
-
-            patrolPointsRemainingInCycle--;
-
-            if (patrolPointsRemainingInCycle > 0)
-            {
-                PickRandomPatrolSpot();
-            }
-            else if (isDoingOffRoomExcursion)
-            {
-                // Finished temporary excursion outside single room -> loop back into Step 1 (Choose Room)
-                ChooseNextPatrolRoom(false);
-            }
-            else
-            {
-                // STEP 4: Finished patrolling -> Now finally sniff the locker(s) chosen back in Step 2!
-                StartSniffChosenLockersPhase();
-            }
+            TriggerPatrolSpotReached();
         }
+    }
+
+    private void TriggerPatrolSpotReached()
+    {
+        if (isWaitingAtPatrolSpot) return;
+
+        isWaitingAtPatrolSpot = true;
+        patrolSpotIdleTimer = Mathf.Max(0.01f, patrolSpotIdleDelay);
+        Debug.Log($"[SecondEventGhost] Touched patrol spot #{currentPatrolSpot} in '{(currentAssignedRoom != null ? currentAssignedRoom.name : "room")}'. Idling for {patrolSpotIdleTimer:F1}s before continuing patrol.");
     }
 
     private void PickRandomPatrolSpot()
@@ -1180,14 +1246,25 @@ public class SecondEventGhost : MonoBehaviour
 
         if (playerInThisLocker)
         {
-            // Player is inside the locker when sniffing time expired -> rush to you and you die!
-            isSniffing = false;
-            sniffingCoroutine = null;
-            yield return StartCoroutine(RushAndKillPlayer(locker.transform.position));
-            yield break;
+            // 80% chance to kill the player when sniffing the locker the player is inside!
+            int roll = Random.Range(0, 100);
+            bool shouldKill = (roll < lockerKillChancePercentage);
+            Debug.Log($"[SecondEventGhost] Player is inside sniffed locker '{(locker != null ? locker.name : "null")}'! Roll: {roll} < {lockerKillChancePercentage}% -> {(shouldKill ? "KILL" : "SPARE")}");
+
+            if (shouldKill)
+            {
+                isSniffing = false;
+                sniffingCoroutine = null;
+                yield return StartCoroutine(RushAndKillPlayer(locker));
+                yield break;
+            }
+            else
+            {
+                Debug.Log($"[SecondEventGhost] Player was inside sniffed locker '{(locker != null ? locker.name : "null")}', but 80% kill roll failed (20% spare chance)! Ghost spares player.");
+            }
         }
 
-        // Player was not inside -> Mark this locker as sniffed
+        // Player was not inside (or was spared by the 20% roll) -> Mark this locker as sniffed
         if (locker != null)
         {
             sniffedLockers.Add(locker);
@@ -1220,19 +1297,52 @@ public class SecondEventGhost : MonoBehaviour
         }
     }
 
-    private IEnumerator RushAndKillPlayer(Vector3 targetPos)
+    private IEnumerator RushAndKillPlayer(GameObject lockerObj)
     {
         isRushingToKill = true;
         ghost_State = GHOST_STATE.CHASE;
         currentWorkflowStep = WORKFLOW_STEP.CHASE_INTERRUPT;
 
-        Debug.Log("[SecondEventGhost] Sniffing time is up and player is inside locker! Rushing to kill!");
+        Debug.Log("[SecondEventGhost] Sniffing time is up and player is inside locker! (80% kill roll succeeded) -> Interacting with locker and rushing to kill!");
+
+        // 1. Call animation of that locker ("Locker Interacted")
+        if (lockerObj != null)
+        {
+            Locker lockerScript = lockerObj.GetComponent<Locker>();
+            if (lockerScript == null) lockerScript = lockerObj.GetComponentInParent<Locker>();
+            if (lockerScript == null) lockerScript = lockerObj.GetComponentInChildren<Locker>();
+
+            if (lockerScript != null && lockerScript.animator != null)
+            {
+                lockerScript.animator.Play("Locker Interacted");
+            }
+            else
+            {
+                Animator anim = lockerObj.GetComponent<Animator>();
+                if (anim == null) anim = lockerObj.GetComponentInChildren<Animator>();
+                if (anim != null)
+                {
+                    anim.Play("Locker Interacted");
+                }
+            }
+        }
+
+        // 2. Trigger Hided.cs to make hided false
+        if (Hide == null)
+        {
+            Hide = FindObjectOfType<Hided>();
+        }
+        if (Hide != null)
+        {
+            Hide.IsPlayerHide = false;
+        }
 
         if (audioSource != null && attackSound != null)
         {
             audioSource.PlayOneShot(attackSound);
         }
 
+        Vector3 targetPos = (lockerObj != null) ? lockerObj.transform.position : transform.position;
         float rushSpeed = moveSpeed * chaseSpeedMultiplier * 1.5f;
         float elapsed = 0f;
         float maxRushDuration = 0.4f;
@@ -1250,7 +1360,7 @@ public class SecondEventGhost : MonoBehaviour
             yield return null;
         }
 
-        KillPlayer("Player caught hiding inside the sniffed locker when time expired!");
+        KillPlayer("Player caught hiding inside the sniffed locker (80% chance succeeded)!");
     }
 
     // ==========================================
@@ -1258,6 +1368,9 @@ public class SecondEventGhost : MonoBehaviour
     // ==========================================
     private void StartChase()
     {
+        isWaitingAtPatrolSpot = false;
+        patrolSpotIdleTimer = 0f;
+
         if (sniffingCoroutine != null)
         {
             StopCoroutine(sniffingCoroutine);
@@ -1274,6 +1387,74 @@ public class SecondEventGhost : MonoBehaviour
         {
             audioSource.PlayOneShot(detectedSound);
         }
+        if (ChaseTheme != null)
+        {
+            PlayChaseTheme();
+        }
+    }
+
+    public void PlayChaseTheme()
+    {
+        if (ChaseTheme == null) return;
+        isFadingOutChaseTheme = false;
+        if (chaseThemeFadeCoroutine != null)
+        {
+            StopCoroutine(chaseThemeFadeCoroutine);
+        }
+        chaseThemeFadeCoroutine = StartCoroutine(ChaseThemeFadeIn());
+    }
+
+    public void StopChaseTheme()
+    {
+        if (ChaseTheme == null) return;
+        if (isFadingOutChaseTheme) return;
+        isFadingOutChaseTheme = true;
+        if (chaseThemeFadeCoroutine != null)
+        {
+            StopCoroutine(chaseThemeFadeCoroutine);
+        }
+        chaseThemeFadeCoroutine = StartCoroutine(ChaseThemeFadeOut());
+    }
+
+    IEnumerator ChaseThemeFadeOut()
+    {
+        if (ChaseTheme == null) yield break;
+
+        while (ChaseTheme != null && ChaseTheme.volume > 0f)
+        {
+            ChaseTheme.volume = Mathf.MoveTowards(ChaseTheme.volume, 0f, chaseThemeFadeSpeed * Time.deltaTime);
+            yield return null;
+        }
+
+        if (ChaseTheme != null)
+        {
+            ChaseTheme.volume = 0f;
+            ChaseTheme.Stop();
+        }
+        isFadingOutChaseTheme = false;
+        chaseThemeFadeCoroutine = null;
+    }
+
+    IEnumerator ChaseThemeFadeIn()
+    {
+        if (ChaseTheme == null) yield break;
+
+        if (!ChaseTheme.isPlaying)
+        {
+            ChaseTheme.Play();
+        }
+
+        while (ChaseTheme != null && ChaseTheme.volume < chaseThemeTargetVolume)
+        {
+            ChaseTheme.volume = Mathf.MoveTowards(ChaseTheme.volume, chaseThemeTargetVolume, chaseThemeFadeSpeed * Time.deltaTime);
+            yield return null;
+        }
+
+        if (ChaseTheme != null)
+        {
+            ChaseTheme.volume = chaseThemeTargetVolume;
+        }
+        chaseThemeFadeCoroutine = null;
     }
 
     private void Chase()
@@ -1289,6 +1470,7 @@ public class SecondEventGhost : MonoBehaviour
             isChasingFromNoise = false;
             noiseInvestigateTimer = 0f;
             doorChaseGraceTimer = 0f;
+            StopChaseTheme();
             StartPatrolRoutineInPlayerRoom();
             return;
         }
@@ -1301,6 +1483,7 @@ public class SecondEventGhost : MonoBehaviour
                 isChasingFromDoorOpen = false;
                 isChasingFromNoise = false;
                 noiseInvestigateTimer = 0f;
+                StopChaseTheme();
                 ChooseNextPatrolRoom(false);
                 return;
             }
@@ -1315,6 +1498,8 @@ public class SecondEventGhost : MonoBehaviour
         if (seesPlayer && !isChasingFromDoorOpen)
         {
             isChasingFromNoise = false; // Visually spotted inside detection range -> full chase
+            lastSeenPlayerPosition = actualPlayerPos;
+            lostSightTimer = noiseInvestigateDuration;
         }
         else if (isChasingFromNoise && !isChasingFromDoorOpen)
         {
@@ -1334,6 +1519,30 @@ public class SecondEventGhost : MonoBehaviour
                 {
                     // Player stopped walking or started crawling outside detection range -> resume workflow!
                     isChasingFromNoise = false;
+                    StopChaseTheme();
+                    ResumeRoutineAfterLostNoise();
+                    return;
+                }
+            }
+        }
+        else if (!isChasingFromDoorOpen)
+        {
+            // Player lost from front visual detection range
+            stillMakingNoise = CheckPlayerMovementNoise();
+            if (stillMakingNoise)
+            {
+                isChasingFromNoise = true;
+                noiseInvestigateTimer = noiseInvestigateDuration;
+                lastHeardNoisePosition = actualPlayerPos;
+            }
+            else
+            {
+                lostSightTimer -= Time.deltaTime;
+                bool reachedLastSeenSpot = Mathf.Abs(transform.position.x - lastSeenPlayerPosition.x) <= reachPointDistance;
+
+                if (lostSightTimer <= 0f || reachedLastSeenSpot)
+                {
+                    StopChaseTheme();
                     ResumeRoutineAfterLostNoise();
                     return;
                 }
@@ -1341,10 +1550,12 @@ public class SecondEventGhost : MonoBehaviour
         }
 
         // Only home onto live player position when visually seen, door-open chasing, or actively making loud footsteps;
-        // if player switched to crawling outside detection range, only investigate lastHeardNoisePosition!
-        Vector3 targetDestination = (isChasingFromNoise && !isChasingFromDoorOpen && !seesPlayer && !stillMakingNoise)
-            ? lastHeardNoisePosition
-            : actualPlayerPos;
+        // if player switched to crawling outside detection range, only investigate lastHeardNoisePosition / lastSeenPlayerPosition!
+        Vector3 targetDestination = actualPlayerPos;
+        if (!isChasingFromDoorOpen && !seesPlayer && !stillMakingNoise)
+        {
+            targetDestination = isChasingFromNoise ? lastHeardNoisePosition : lastSeenPlayerPosition;
+        }
 
         // Face target horizontally while chasing
         float diffX = targetDestination.x - transform.position.x;
@@ -2220,6 +2431,8 @@ public class SecondEventGhost : MonoBehaviour
         if (isKillingPlayer) return;
         isKillingPlayer = true;
 
+        StopChaseTheme();
+
         Debug.Log($"[SecondEventGhost] {reason} -> Starting death routine!");
 
         if (audioSource != null && attackSound != null)
@@ -2272,6 +2485,10 @@ public class SecondEventGhost : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D collision)
     {
+        if (collision != null && collision.CompareTag("PartrolSpot") && ghost_State == GHOST_STATE.PATROL && !isWaitingAtPatrolSpot)
+        {
+            TriggerPatrolSpotReached();
+        }
         CheckContactKillCollider(collision);
     }
 
@@ -2395,7 +2612,9 @@ public class SecondEventGhost : MonoBehaviour
     {
         if (animator == null) return;
 
-        bool isMoving = (ghost_State == GHOST_STATE.PATROL || ghost_State == GHOST_STATE.CHASE || (ghost_State == GHOST_STATE.SNIFF && !isSniffing));
+        bool isMoving = (ghost_State == GHOST_STATE.PATROL && !isWaitingAtPatrolSpot) ||
+                        (ghost_State == GHOST_STATE.CHASE) ||
+                        (ghost_State == GHOST_STATE.SNIFF && !isSniffing);
         animator.SetBool("IsMoving", isMoving);
         animator.SetBool("IsChasing", ghost_State == GHOST_STATE.CHASE);
         animator.SetBool("IsSniffing", isSniffing);

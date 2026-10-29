@@ -28,6 +28,16 @@ public class SummonTheEntityByRandom : MonoBehaviour
     [Tooltip("If true and BlindedEntity was blocked by a stair room with no other entity to spawn, delay the spawn to the room after rather than resetting full countdown")]
     public bool delaySpawnIfBlockedByStair = false;
 
+    [Header("Timeline On First Entity Disappear")]
+    [Tooltip("Condition 1: Timeline prefab instantiated when the very first entity that appears has disappeared")]
+    public GameObject firstEntityDisappearTimelinePrefab;
+    [Tooltip("Optional spawn point override for firstEntityDisappearTimelinePrefab (uses prefab's own position/rotation if null)")]
+    public Transform firstEntityTimelineSpawnPoint;
+
+    [Header("Blinded Johnny Guarantee")]
+    [Tooltip("Tracks consecutive non-blinded entity spawns to guarantee Blinded Johnny every 2 entity spawns")]
+    public static int nonBlindedSpawnsSinceLastBlinded = 0;
+
     private int lastDecreaseFrame = -1;
     private bool initialized = false;
     private bool isSpawningDelayed = false;
@@ -171,6 +181,34 @@ public class SummonTheEntityByRandom : MonoBehaviour
         Spawn();
     }
 
+    public bool IsCertainEntityRoom()
+    {
+        EnsureRoomCounter();
+        if (roomCounter == null) return false;
+
+        // Event 1 rooms (rooms 30 to 34): First Event Ghost spawns here
+        if (roomCounter.PassedRoomCount >= roomCounter.eventStartRoom &&
+            roomCounter.PassedRoomCount <= roomCounter.eventEndRoom)
+        {
+            return true;
+        }
+
+        // Event 2 rooms (rooms 45 to 48): Second Event Ghost spawns here
+        if (roomCounter.PassedRoomCount >= roomCounter.event2StartRoom &&
+            roomCounter.PassedRoomCount <= roomCounter.event2EndRoom)
+        {
+            return true;
+        }
+
+        // Any forced event room configured in RoomCounter
+        if (roomCounter.HasForcedRoom())
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     [ContextMenu("Spawn Entity")]
     public bool Spawn()
     {
@@ -184,10 +222,13 @@ public class SummonTheEntityByRandom : MonoBehaviour
             return false;
         }
 
+        bool isCertainRoom = IsCertainEntityRoom();
         bool nextIsStair = preventBlindedEntityOnStairRoom && IsNextRoomStairRoom();
 
-        // Build list of valid entity prefabs
+        // Build list of valid entity prefabs, categorizing BlindedEntity vs other entities
         List<GameObject> validEntities = new List<GameObject>();
+        List<GameObject> blindedEntities = new List<GameObject>();
+        List<GameObject> otherEntities = new List<GameObject>();
         bool hadBlindedEntity = false;
 
         foreach (GameObject enemyPrefab in Entity)
@@ -198,31 +239,67 @@ public class SummonTheEntityByRandom : MonoBehaviour
             if (isBlinded)
             {
                 hadBlindedEntity = true;
-            }
 
-            // Exclude BlindedEntity if the next room is a stair room
-            if (nextIsStair && isBlinded)
+                // Never spawn BlindedEntity in certain rooms (Event 1, Event 2, Stair room, Forced room)
+                if (isCertainRoom || nextIsStair)
+                {
+                    continue;
+                }
+
+                blindedEntities.Add(enemyPrefab);
+            }
+            else
             {
-                continue;
+                otherEntities.Add(enemyPrefab);
             }
 
             validEntities.Add(enemyPrefab);
         }
 
-        // If next room is stair room and all available entities were BlindedEntity, do not spawn
+        // If no valid entities can spawn in this room, do not spawn
         if (validEntities.Count == 0)
         {
-            if (nextIsStair && hadBlindedEntity)
+            if (isCertainRoom || (nextIsStair && hadBlindedEntity))
             {
-                Debug.Log("[SummonTheEntityByRandom] BlindedEntity was prevented from spawning because the next room is a StairRoom.");
+                Debug.Log("[SummonTheEntityByRandom] BlindedEntity was prevented from spawning because this is a certain entity/stair room.");
             }
             return false;
         }
 
-        int randomIndex = Random.Range(0, validEntities.Count);
-        GameObject chosenPrefab = validEntities[randomIndex];
+        GameObject chosenPrefab = null;
+
+        // Guarantee system for normal rooms:
+        // Guarantee Blinded Johnny spawn every 2 entity spawns!
+        if (!isCertainRoom && !nextIsStair && blindedEntities.Count > 0)
+        {
+            // If at least 1 non-blinded entity already spawned previously, this 2nd entity spawn is GUARANTEED to be Blinded Johnny!
+            if (nonBlindedSpawnsSinceLastBlinded >= 1)
+            {
+                chosenPrefab = blindedEntities[Random.Range(0, blindedEntities.Count)];
+                nonBlindedSpawnsSinceLastBlinded = 0;
+                Debug.Log($"[SummonTheEntityByRandom] Guarantee triggered! Blinded Johnny spawned (guaranteed every 2 entity spawns in normal rooms).");
+            }
+        }
+
+        if (chosenPrefab == null)
+        {
+            int randomIndex = Random.Range(0, validEntities.Count);
+            chosenPrefab = validEntities[randomIndex];
+
+            if (IsBlindedEntity(chosenPrefab))
+            {
+                nonBlindedSpawnsSinceLastBlinded = 0;
+            }
+            else
+            {
+                nonBlindedSpawnsSinceLastBlinded++;
+            }
+        }
+
         Vector3 spawnPos = spawnPoint != null ? spawnPoint.position : transform.position;
         GameObject newEnemy = Instantiate(chosenPrefab, spawnPos, Quaternion.identity);
+
+        RoomCounter.NotifyEntityAppeared(newEnemy, firstEntityDisappearTimelinePrefab, firstEntityTimelineSpawnPoint);
 
         if (AnomalyCheck.instance != null)
         {

@@ -15715,8 +15715,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 8.37, y: -2.93, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 1639139493520171388}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -15770,7 +15770,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 6924203375738158291, guid: a63c587d69029874994aa666e5a3d672, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.51572317, g: 0.51572317, b: 0.51572317, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -17075,6 +17075,7 @@ MonoBehaviour:
   - {fileID: 6267208673490482152, guid: e399c7ee0c996e24fbf8a1fc4563681e, type: 3}
   - {fileID: 8970193399305901053, guid: 37c5f616676187a40be7fac432e33e92, type: 3}
   spawnPoint: {fileID: 2642719352010205414}
+  spawnDelay: 0.1
   Spawnable: 0
   spawnChancePercentage: 33
   minRooms: 2
@@ -17084,6 +17085,8 @@ MonoBehaviour:
   SummonOnce: 0
   preventBlindedEntityOnStairRoom: 1
   delaySpawnIfBlockedByStair: 0
+  firstEntityDisappearTimelinePrefab: {fileID: 0}
+  firstEntityTimelineSpawnPoint: {fileID: 0}
 --- !u!1 &5883413938296895940
 GameObject:
   m_ObjectHideFlags: 0
@@ -28041,7 +28044,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -2.82, y: -2.66, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1639139493520171388}
@@ -28096,7 +28099,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 6924203375738158291, guid: a63c587d69029874994aa666e5a3d672, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.49685526, g: 0.49685526, b: 0.49685526, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

@@ -40,6 +40,10 @@ public class FRISTEVENTGHOST : MonoBehaviour
 
     [Header("Timeline / Death Effects")]
     public PlayableDirector TimelineWhenDead;
+    [Tooltip("Condition 2: Timeline prefab instantiated when this ghost dies and DiesRoutine() ends")]
+    public GameObject timelinePrefabWhenDeadEnd;
+    [Tooltip("Optional spawn point override for timelinePrefabWhenDeadEnd (uses prefab's own position/rotation if null)")]
+    public Transform timelinePrefabSpawnPoint;
     [Tooltip("If true, hide sprite/mesh renderers at the end when ghost is destroyed")]
     public bool hideRenderersOnDeath = false;
 
@@ -50,7 +54,18 @@ public class FRISTEVENTGHOST : MonoBehaviour
     private Rigidbody2D rb;
     private Vector2 lastMoveDirection = Vector2.right;
 
+    [Header("ChaseTheme")]
+    public AudioSource chasethemeonly;
+
+    [Header("Jump Settings")]
+    [Tooltip("Seconds ghost pauses still before launching the high-speed jump")]
+    public float jumpPauseDuration = 0.5f;
+    private bool isPreparingJump = false;
+    private float jumpStartY;
+    private float jumpTargetY;
+
     private bool hasTriggeredJump = false;
+    private float lastTimelineSearchTime = -10f;
 
     void Awake()
     {
@@ -83,12 +98,30 @@ public class FRISTEVENTGHOST : MonoBehaviour
             ghostCollider.isTrigger = true;
         }
 
+
         currentSpeed = chaseSpeed;
+        FindTimelineDirector(true);
+
+        // Attach collision forwarders to all child colliders so events on child objects (e.g. Square) reach this script
+        Collider2D[] allChildCols = GetComponentsInChildren<Collider2D>(true);
+        foreach (var col in allChildCols)
+        {
+            if (col != null)
+            {
+                col.isTrigger = true;
+                GhostCollisionForwarder2D forwarder = col.GetComponent<GhostCollisionForwarder2D>();
+                if (forwarder == null)
+                {
+                    forwarder = col.gameObject.AddComponent<GhostCollisionForwarder2D>();
+                }
+                forwarder.owner = this;
+            }
+        }
     }
 
     void FindPlayer()
     {
-        if (died || currentState == GhostState.DEAD) return;
+        if (died || currentState == GhostState.DEAD || isKillingPlayer) return;
 
         if (playerTransform == null)
         {
@@ -103,15 +136,49 @@ public class FRISTEVENTGHOST : MonoBehaviour
         }
     }
 
+    public void FindTimelineDirector(bool force = false)
+    {
+        if (TimelineWhenDead != null) return;
+
+        // Rate-limit scene lookups to at most once every 0.5s unless forced
+        if (!force && Time.time - lastTimelineSearchTime < 0.5f) return;
+        lastTimelineSearchTime = Time.time;
+
+      
+        // 2. Safely find GameObject tagged "CORRIDOR END" (avoids crash if tag is not defined in Tag Manager)
+        GameObject corridorObj = null;
+        try
+        {
+            corridorObj = GameObject.FindGameObjectWithTag("CORRIDOR END");
+        }
+        catch (System.Exception)
+        {
+            // Tag might not be defined in Tag Manager yet
+        }
+
+        // 3. Fallback: Search by GameObject name in case it was named "CORRIDOR END" instead of tagged
+        if (corridorObj == null)
+        {
+            corridorObj = GameObject.Find("CORRIDOR END");
+        }
+
+        if (corridorObj != null)
+        {
+            TimelineWhenDead = corridorObj.GetComponent<PlayableDirector>();
+            if (TimelineWhenDead == null)
+            {
+                TimelineWhenDead = corridorObj.GetComponentInChildren<PlayableDirector>();
+            }
+        }
+
+      
+    }
+
     void Update()
     {
         if (TimelineWhenDead == null)
         {
-            TimelineWhenDead = GetComponent<PlayableDirector>();
-            if (TimelineWhenDead == null)
-            {
-                TimelineWhenDead = FindObjectOfType<PlayableDirector>();
-            }
+            FindTimelineDirector();
         }
 
         // Completely stop all chase & trigger logic when dead
@@ -131,11 +198,15 @@ public class FRISTEVENTGHOST : MonoBehaviour
             if (currentState == GhostState.IDLE && room >= chaseStartRoom)
             {
                 currentState = GhostState.CHASE;
+                if (chasethemeonly != null && !chasethemeonly.isPlaying)
+                {
+                    chasethemeonly.Play();
+                }
                 Debug.Log("[FRISTEVENTGHOST] Started chasing at room " + room);
             }
 
-            // Jump / Lunge when room 34 is reached
-            if (!hasTriggeredJump && room >= jumpRoom)
+            // Jump / Lunge when room jumpRoom
+            if (!hasTriggeredJump && room == jumpRoom)
             {
                 TriggerJump();
             }
@@ -146,24 +217,21 @@ public class FRISTEVENTGHOST : MonoBehaviour
             if (currentState == GhostState.IDLE)
             {
                 currentState = GhostState.CHASE;
+                if (chasethemeonly != null && !chasethemeonly.isPlaying)
+                {
+                    chasethemeonly.Play();
+                }
             }
         }
 
-        // 2. Proximity check (failsafe in case Unity physics trigger does not fire)
-        if (playerTransform != null && currentState != GhostState.IDLE)
-        {
-            float dist = Vector2.Distance(transform.position, playerTransform.position);
-            if (dist <= hitDistance)
-            {
-                ResolveContact();
-            }
-        }
+        // 2. Proximity and overlap check (ensures reliable contact in both Chase and Jump states)
+        CheckProximityAndOverlap();
     }
 
     void FixedUpdate()
     {
-        // Absolutely no chasing player when dead or idle
-        if (died || currentState == GhostState.DEAD || currentState == GhostState.IDLE) return;
+        // Absolutely no chasing player when dead, idle, or preparing jump
+        if (died || currentState == GhostState.DEAD || currentState == GhostState.IDLE || isPreparingJump) return;
 
         // When player is dying: stop tracking player and keep moving forward
         if (isKillingPlayer)
@@ -182,22 +250,112 @@ public class FRISTEVENTGHOST : MonoBehaviour
             lastMoveDirection = diff.normalized;
         }
 
-        // Move towards player
-        transform.position = Vector2.MoveTowards(
-            transform.position,
-            playerTransform.position,
-            currentSpeed * Time.fixedDeltaTime
-        );
+        if (currentState == GhostState.JUMP)
+        {
+            // Move horizontally towards player at multiplied jump speed
+            float newX = Mathf.MoveTowards(transform.position.x, playerTransform.position.x, currentSpeed * Time.fixedDeltaTime);
+
+            // Getting higher with delta time up to riseHeight (high as rise height when it dies)
+            float riseSpeed = (riseDuration > 0f) ? (riseHeight / riseDuration) : 4f;
+            float newY = Mathf.MoveTowards(transform.position.y, jumpTargetY, riseSpeed * Time.fixedDeltaTime);
+
+            transform.position = new Vector3(newX, newY, transform.position.z);
+            if (rb != null)
+            {
+                rb.position = new Vector2(newX, newY);
+            }
+        }
+        else
+        {
+            // Move towards player normally
+            transform.position = Vector2.MoveTowards(
+                transform.position,
+                playerTransform.position,
+                currentSpeed * Time.fixedDeltaTime
+            );
+            if (rb != null)
+            {
+                rb.position = transform.position;
+            }
+        }
+
+        CheckProximityAndOverlap();
+    }
+
+    public void CheckProximityAndOverlap()
+    {
+        if (died || currentState == GhostState.DEAD || currentState == GhostState.IDLE || isPreparingJump || isKillingPlayer) return;
+
+        if (playerTransform == null)
+        {
+            FindPlayer();
+            if (playerTransform == null) return;
+        }
+
+        // 1. Direct Collider Bounds Intersection
+        if (ghostCollider == null)
+        {
+            ghostCollider = GetComponent<Collider2D>();
+            if (ghostCollider == null) ghostCollider = GetComponentInChildren<Collider2D>();
+        }
+
+        if (ghostCollider != null)
+        {
+            Collider2D playerCol = playerTransform.GetComponent<Collider2D>();
+            if (playerCol == null) playerCol = playerTransform.GetComponentInChildren<Collider2D>();
+
+            if (playerCol != null && ghostCollider.bounds.Intersects(playerCol.bounds))
+            {
+                ResolveContact();
+                return;
+            }
+        }
+
+        // 2. Bounding distance check (horizontal reach & vertical reach)
+        // FAT RAT's collider is ~10m wide, so 4.5m represents its front body reach
+        float dx = Mathf.Abs(transform.position.x - playerTransform.position.x);
+        float dy = Mathf.Abs(transform.position.y - playerTransform.position.y);
+
+        float reachX = Mathf.Max(hitDistance, 4.5f);
+        float reachY = (currentState == GhostState.JUMP) ? (riseHeight + 4.0f) : 4.0f;
+
+        if (dx <= reachX && dy <= reachY)
+        {
+            ResolveContact();
+        }
     }
 
     [ContextMenu("Trigger Jump")]
     public void TriggerJump()
     {
-        if (died || currentState == GhostState.DEAD) return;
+        if (died || currentState == GhostState.DEAD || hasTriggeredJump) return;
         hasTriggeredJump = true;
+        StartCoroutine(JumpRoutine());
+    }
+
+    private IEnumerator JumpRoutine()
+    {
+        isPreparingJump = true;
+        currentSpeed = 0f; // Wait still for 0.5s!
+        Debug.Log("[FRISTEVENTGHOST] Preparing jump: waiting still for " + jumpPauseDuration + "s...");
+
+        yield return new WaitForSeconds(jumpPauseDuration);
+
+        if (died || currentState == GhostState.DEAD) yield break;
+
+        isPreparingJump = false;
         currentState = GhostState.JUMP;
-        currentSpeed = chaseSpeed * jumpSpeedMultiplier;
-        Debug.Log("[FRISTEVENTGHOST] Jump triggered! Speed increased to " + currentSpeed);
+        currentSpeed = chaseSpeed * jumpSpeedMultiplier; // Multiply speed!
+
+        jumpStartY = transform.position.y;
+        jumpTargetY = jumpStartY + riseHeight; // Getting higher as high as rise height when it dies!
+
+        if (chasethemeonly != null && !chasethemeonly.isPlaying)
+        {
+            chasethemeonly.Play();
+        }
+
+        Debug.Log("[FRISTEVENTGHOST] Jump launched! Speed multiplied to " + currentSpeed + ", rising Y towards " + jumpTargetY);
     }
 
     // Trigger & Collision hooks for maximum compatibility
@@ -206,7 +364,7 @@ public class FRISTEVENTGHOST : MonoBehaviour
     void OnCollisionEnter2D(Collision2D collision) { CheckCollision(collision.gameObject); }
     void OnCollisionStay2D(Collision2D collision) { CheckCollision(collision.gameObject); }
 
-    void CheckCollision(GameObject hitObj)
+    public void CheckCollision(GameObject hitObj)
     {
         if (died || currentState == GhostState.DEAD) return;
 
@@ -232,8 +390,24 @@ public class FRISTEVENTGHOST : MonoBehaviour
             hideStatus = FindObjectOfType<Hided>();
         }
 
-        // Check if player is hiding via Hided script or inside a Locker
+        // Direct zero-delay check: player is hiding via Hided script or inside a Locker
         bool isHiding = (hideStatus != null && hideStatus.IsPlayerHide);
+
+        if (!isHiding)
+        {
+            Locker[] allLockers = FindObjectsOfType<Locker>();
+            if (allLockers != null)
+            {
+                for (int i = 0; i < allLockers.Length; i++)
+                {
+                    if (allLockers[i] != null && allLockers[i].IsPlayerInsideThisLocker)
+                    {
+                        isHiding = true;
+                        break;
+                    }
+                }
+            }
+        }
 
         if (isHiding)
         {
@@ -255,6 +429,11 @@ public class FRISTEVENTGHOST : MonoBehaviour
     {
         if (isKillingPlayer) yield break;
         isKillingPlayer = true;
+
+        if (chasethemeonly != null && chasethemeonly.isPlaying)
+        {
+            chasethemeonly.Stop();
+        }
 
         // Stop tracking player
         playerTransform = null;
@@ -301,6 +480,12 @@ public class FRISTEVENTGHOST : MonoBehaviour
     {
         if (died) return;
         died = true;
+
+        if (chasethemeonly != null && chasethemeonly.isPlaying)
+        {
+            chasethemeonly.Stop();
+        }
+
         currentState = GhostState.DEAD;
         currentSpeed = 0f;
         playerTransform = null; // Sever player tracking immediately
@@ -331,6 +516,13 @@ public class FRISTEVENTGHOST : MonoBehaviour
     {
         currentSpeed = 0f;
         playerTransform = null;
+        float Volume =chasethemeonly.volume;
+        while(Volume > 0)
+        {
+            Volume -= Time.deltaTime * 1f;
+            chasethemeonly.volume = Volume;
+            yield return null;
+        }
 
         // Ensure colliders stay completely disabled
         if (ghostCollider != null) ghostCollider.enabled = false;
@@ -350,6 +542,11 @@ public class FRISTEVENTGHOST : MonoBehaviour
         Debug.Log("[FRISTEVENTGHOST] Ghost died! Colliders disabled. Rising 2m, sliding right, then falling down.");
 
         // Play Timeline if assigned
+        if (TimelineWhenDead == null)
+        {
+            FindTimelineDirector(true);
+        }
+
         if (TimelineWhenDead != null)
         {
             TimelineWhenDead.Play();
@@ -415,6 +612,9 @@ public class FRISTEVENTGHOST : MonoBehaviour
             yield return null;
         }
 
+        // Condition 2: First event ghost died and die enumerator ended -> instantiate Timeline prefab!
+        RoomCounter.TriggerFirstEventGhostDeadTimeline(timelinePrefabWhenDeadEnd, timelinePrefabSpawnPoint);
+
         // Hide renderers and destroy
         if (hideRenderersOnDeath)
         {
@@ -429,4 +629,11 @@ public class FRISTEVENTGHOST : MonoBehaviour
     }
 }
 
-
+public class GhostCollisionForwarder2D : MonoBehaviour
+{
+    public FRISTEVENTGHOST owner;
+    void OnTriggerEnter2D(Collider2D c) { if (owner != null && c != null) owner.CheckCollision(c.gameObject); }
+    void OnTriggerStay2D(Collider2D c) { if (owner != null && c != null) owner.CheckCollision(c.gameObject); }
+    void OnCollisionEnter2D(Collision2D c) { if (owner != null && c != null && c.gameObject != null) owner.CheckCollision(c.gameObject); }
+    void OnCollisionStay2D(Collision2D c) { if (owner != null && c != null && c.gameObject != null) owner.CheckCollision(c.gameObject); }
+}

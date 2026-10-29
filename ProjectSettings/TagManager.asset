@@ -10,6 +10,7 @@ TagManager:
   - PartrolSpot
   - Locker
   - PatrolSpot
+  - CORRIDOR END
   layers:
   - Default
   - TransparentFX

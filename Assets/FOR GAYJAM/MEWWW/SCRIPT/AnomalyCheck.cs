@@ -8,6 +8,12 @@ public class AnomalyCheck : MonoBehaviour
     [Header("Anomaly Settings")]
     public int anomalyLimit = 1;
 
+    [Header("Timeline On First Entity Disappear")]
+    [Tooltip("Condition 1: Timeline prefab instantiated when the very first entity that appears has disappeared")]
+    public GameObject firstEntityDisappearTimelinePrefab;
+    [Tooltip("Optional spawn point override for firstEntityDisappearTimelinePrefab (uses prefab's own position/rotation if null)")]
+    public Transform firstEntityTimelineSpawnPoint;
+
     [SerializeField]
     private List<GameObject> AnomaliesInMap = new List<GameObject>();
 
@@ -18,6 +24,10 @@ public class AnomalyCheck : MonoBehaviour
         if (instance == null)
         {
             instance = this;
+            if (RoomCounter.instance == null)
+            {
+                RoomCounter.ResetTimelineConditionTracking();
+            }
         }
         else
         {
@@ -28,6 +38,7 @@ public class AnomalyCheck : MonoBehaviour
     void Update()
     {
         AnomalyCap();
+        RoomCounter.UpdateTimelineConditionWatchers();
 
         bool hasAnomalies = AnomaliesInMap != null && AnomaliesInMap.Count > 0;
         if (hadAnomaliesLastFrame && !hasAnomalies)
@@ -64,6 +75,7 @@ public class AnomalyCheck : MonoBehaviour
         if (Anomaly != null)
         {
             AnomaliesInMap.Add(Anomaly);
+            RoomCounter.NotifyEntityAppeared(Anomaly, firstEntityDisappearTimelinePrefab, firstEntityTimelineSpawnPoint);
         }
     }
 

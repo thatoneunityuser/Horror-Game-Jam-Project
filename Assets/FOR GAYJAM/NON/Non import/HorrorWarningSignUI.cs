@@ -165,7 +165,7 @@ public class HorrorWarningSignUI : MonoBehaviour
             SnapshotAnomaly anomaly = cachedSnapshotAnomalies[i];
             if (anomaly == null || !anomaly.gameObject.activeInHierarchy) continue;
 
-            if (!anomaly.IsPlayerInSafeArea())
+            if (!anomaly.hasSnapshotted && !anomaly.IsPlayerInSafeArea())
             {
                 needsLight = true;
                 break;
@@ -184,7 +184,7 @@ public class HorrorWarningSignUI : MonoBehaviour
         {
             targetLevel = WarningLevel.Yellow_Suspect;
         }
-        else if (needsLight)
+        else if (needsLight && !SnapshotAnomaly.isSnapshotted)
         {
             targetLevel = WarningLevel.White_Light;
         }

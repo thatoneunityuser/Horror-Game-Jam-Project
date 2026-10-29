@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 8502912056133486009}
   - component: {fileID: 2462416108580652852}
   - component: {fileID: 5131199398162363816}
+  - component: {fileID: -3415959519988315386}
   m_Layer: 0
   m_Name: SNIFF GHOST
   m_TagString: Untagged
@@ -185,6 +186,8 @@ MonoBehaviour:
   eventStartRoom: 45
   eventEndRoom: 48
   autoDespawnAfterEvent: 1
+  timelinePrefabOnDisappear: {fileID: 0}
+  timelineSpawnPoint: {fileID: 0}
   moveSpeed: 3
   chaseSpeedMultiplier: 6
   reachPointDistance: 1
@@ -197,9 +200,14 @@ MonoBehaviour:
   lockersPerRoom: 1
   lockersToSniffPerCycle: 1
   patrolSpotsBeforeNextSniff: 2
+  patrolSpotIdleDelay: 2
+  lockerKillChancePercentage: 80
   player_Target: {fileID: 0}
   animator: {fileID: 0}
   audioSource: {fileID: 5131199398162363816}
+  ChaseTheme: {fileID: -3415959519988315386}
+  chaseThemeTargetVolume: 1
+  chaseThemeFadeSpeed: 6
   detectedSound: {fileID: 8300000, guid: a82d2c89e25296f499575579fe0bf691, type: 3}
   sniffSound: {fileID: 8300000, guid: daa6fe7b03a2faf48a99c3c9e187c031, type: 3}
   attackSound: {fileID: 0}
@@ -222,6 +230,103 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 1
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!82 &-3415959519988315386
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7759980240114813793}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 8300000, guid: f274717b15af1d44ea159e74e727f886, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1

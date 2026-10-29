@@ -10090,6 +10090,7 @@ MonoBehaviour:
   - {fileID: 6267208673490482152, guid: e399c7ee0c996e24fbf8a1fc4563681e, type: 3}
   - {fileID: 8970193399305901053, guid: 37c5f616676187a40be7fac432e33e92, type: 3}
   spawnPoint: {fileID: 6704015512914382651}
+  spawnDelay: 0.1
   Spawnable: 0
   spawnChancePercentage: 33
   minRooms: 2
@@ -10099,6 +10100,8 @@ MonoBehaviour:
   SummonOnce: 0
   preventBlindedEntityOnStairRoom: 1
   delaySpawnIfBlockedByStair: 0
+  firstEntityDisappearTimelinePrefab: {fileID: 0}
+  firstEntityTimelineSpawnPoint: {fileID: 0}
 --- !u!1 &961545112508952060
 GameObject:
   m_ObjectHideFlags: 0
@@ -15545,7 +15548,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 6924203375738158291, guid: a63c587d69029874994aa666e5a3d672, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.47798735, g: 0.47798735, b: 0.47798735, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

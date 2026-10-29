@@ -9,24 +9,66 @@ public class FLASHLIGHT : MonoBehaviour
 
     private bool isOn;
 
+    public bool IsOn
+    {
+        get => isOn;
+        set => SetFlashlight(value, false);
+    }
+
     void Start()
     {
-        isOn = startOn;
-        if (Flashlight != null)
-        {
-            Flashlight.SetActive(isOn);
-        }
+        SetFlashlight(startOn, false);
     }
 
     void Update()
     {
         if (Input.GetKeyDown(toggleKey))
         {
+            ToggleFlashlight();
+        }
+    }
+
+    public void ToggleFlashlight()
+    {
+        SetFlashlight(!isOn, true);
+    }
+
+    public void SetFlashlight(bool state, bool playSound = true)
+    {
+        isOn = state;
+        if (playSound && a != null)
+        {
             a.Play();
-            isOn = !isOn;
-            if (Flashlight != null)
+        }
+
+        ApplyLightState();
+
+        if (FlashlightUI.Instance != null && FlashlightUI.Instance.isFlashlightOn != isOn)
+        {
+            FlashlightUI.Instance.SetFlashlight(isOn);
+        }
+    }
+
+    public void SetLightStateDirect(bool state)
+    {
+        isOn = state;
+        ApplyLightState();
+    }
+
+    public void ApplyLightState()
+    {
+        if (Flashlight != null)
+        {
+            Flashlight.SetActive(isOn);
+
+            // Re-enable / disable any Light or Light2D components attached to Flashlight
+            Behaviour[] lightBehaviours = Flashlight.GetComponentsInChildren<Behaviour>(true);
+            foreach (var b in lightBehaviours)
             {
-                Flashlight.SetActive(isOn);
+                if (b != null && (b.GetType().Name.Contains("Light2D") || b.GetType().Name == "Light"))
+                {
+                    b.enabled = isOn;
+                }
             }
         }
     }

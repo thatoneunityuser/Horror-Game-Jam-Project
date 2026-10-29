@@ -233,9 +233,25 @@ public class FlashlightUI : MonoBehaviour, IPointerClickHandler
         {
             targetLightComponent.enabled = isFlashlightOn;
         }
-        else if (targetLightObject != null)
+        if (targetLightObject != null)
         {
             targetLightObject.SetActive(isFlashlightOn);
+
+            Behaviour[] lightBehaviours = targetLightObject.GetComponentsInChildren<Behaviour>(true);
+            foreach (var b in lightBehaviours)
+            {
+                if (b != null && (b.GetType().Name.Contains("Light2D") || b.GetType().Name == "Light"))
+                {
+                    b.enabled = isFlashlightOn;
+                }
+            }
+        }
+
+        // Sync with player's FLASHLIGHT component if present
+        FLASHLIGHT fl = targetLightObject != null ? targetLightObject.GetComponentInParent<FLASHLIGHT>() : FindObjectOfType<FLASHLIGHT>();
+        if (fl != null && fl.IsOn != isFlashlightOn)
+        {
+            fl.SetLightStateDirect(isFlashlightOn);
         }
     }
 

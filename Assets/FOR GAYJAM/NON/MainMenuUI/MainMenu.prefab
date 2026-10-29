@@ -423,8 +423,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 5662770941372353269}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -530,6 +530,15 @@ MonoBehaviour:
   animSpeed: 14
   enableJitter: 1
   jitterIntensity: 0.75
+  enableProgressiveRed: 1
+  timeToMaxRed: 2.5
+  maxRedLimit: 1
+  maxRedBorderColor: {r: 0.95, g: 0.08, b: 0.08, a: 1}
+  maxRedTextColor: {r: 1, g: 0.18, b: 0.18, a: 1}
+  redCooldownSpeed: 3.5
+  pulseAtMaxRed: 1
+  customHoverSfx: {fileID: 0}
+  customClickSfx: {fileID: 0}
   borderImage: {fileID: 6793885968645082846}
   buttonText: {fileID: 0}
 --- !u!1 &1893614790408096895
@@ -567,8 +576,8 @@ RectTransform:
   - {fileID: 4176061811945689740}
   m_Father: {fileID: 6226249372045317271}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 250, y: 54}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -674,6 +683,15 @@ MonoBehaviour:
   animSpeed: 14
   enableJitter: 1
   jitterIntensity: 0.75
+  enableProgressiveRed: 1
+  timeToMaxRed: 2.5
+  maxRedLimit: 1
+  maxRedBorderColor: {r: 0.95, g: 0.08, b: 0.08, a: 1}
+  maxRedTextColor: {r: 1, g: 0.18, b: 0.18, a: 1}
+  redCooldownSpeed: 3.5
+  pulseAtMaxRed: 1
+  customHoverSfx: {fileID: 0}
+  customClickSfx: {fileID: 0}
   borderImage: {fileID: 1493584870332196760}
   buttonText: {fileID: 7594964753981738790}
 --- !u!1 &1920339959505731229
@@ -1043,6 +1061,15 @@ MonoBehaviour:
   animSpeed: 14
   enableJitter: 1
   jitterIntensity: 0.75
+  enableProgressiveRed: 1
+  timeToMaxRed: 2.5
+  maxRedLimit: 1
+  maxRedBorderColor: {r: 0.95, g: 0.08, b: 0.08, a: 1}
+  maxRedTextColor: {r: 1, g: 0.18, b: 0.18, a: 1}
+  redCooldownSpeed: 3.5
+  pulseAtMaxRed: 1
+  customHoverSfx: {fileID: 0}
+  customClickSfx: {fileID: 0}
   borderImage: {fileID: 5171608221038659490}
   buttonText: {fileID: 7499013477628511180}
 --- !u!1 &2690518010297628006
@@ -1280,8 +1307,8 @@ RectTransform:
   - {fileID: 3471436673334338783}
   m_Father: {fileID: 6226249372045317271}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 250, y: 54}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1387,6 +1414,15 @@ MonoBehaviour:
   animSpeed: 14
   enableJitter: 1
   jitterIntensity: 0.75
+  enableProgressiveRed: 1
+  timeToMaxRed: 2.5
+  maxRedLimit: 1
+  maxRedBorderColor: {r: 0.95, g: 0.08, b: 0.08, a: 1}
+  maxRedTextColor: {r: 1, g: 0.18, b: 0.18, a: 1}
+  redCooldownSpeed: 3.5
+  pulseAtMaxRed: 1
+  customHoverSfx: {fileID: 0}
+  customClickSfx: {fileID: 0}
   borderImage: {fileID: 6077216718129531892}
   buttonText: {fileID: 5604518385626892092}
 --- !u!1 &3520476002448566093
@@ -1538,7 +1574,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4294110187
   m_fontColor: {r: 0.92, g: 0.92, b: 0.95, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1551,7 +1587,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -1883,8 +1919,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 5662770941372353269}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1990,6 +2026,15 @@ MonoBehaviour:
   animSpeed: 14
   enableJitter: 1
   jitterIntensity: 0.75
+  enableProgressiveRed: 1
+  timeToMaxRed: 2.5
+  maxRedLimit: 1
+  maxRedBorderColor: {r: 0.95, g: 0.08, b: 0.08, a: 1}
+  maxRedTextColor: {r: 1, g: 0.18, b: 0.18, a: 1}
+  redCooldownSpeed: 3.5
+  pulseAtMaxRed: 1
+  customHoverSfx: {fileID: 0}
+  customClickSfx: {fileID: 0}
   borderImage: {fileID: 2873844199062557108}
   buttonText: {fileID: 0}
 --- !u!1 &5342083516552366827
@@ -2073,6 +2118,8 @@ MonoBehaviour:
   audioSource: {fileID: 8172846944434036670}
   hoverSfx: {fileID: 0}
   clickSfx: {fileID: 0}
+  hoverVolume: 0.6
+  clickVolume: 0.85
 --- !u!82 &8172846944434036670
 AudioSource:
   m_ObjectHideFlags: 0
@@ -2312,6 +2359,15 @@ MonoBehaviour:
   animSpeed: 14
   enableJitter: 1
   jitterIntensity: 0.75
+  enableProgressiveRed: 1
+  timeToMaxRed: 2.5
+  maxRedLimit: 1
+  maxRedBorderColor: {r: 0.95, g: 0.08, b: 0.08, a: 1}
+  maxRedTextColor: {r: 1, g: 0.18, b: 0.18, a: 1}
+  redCooldownSpeed: 3.5
+  pulseAtMaxRed: 1
+  customHoverSfx: {fileID: 0}
+  customClickSfx: {fileID: 0}
   borderImage: {fileID: 7315173203811864203}
   buttonText: {fileID: 5354695929316532025}
 --- !u!1 &5524898148430704775
@@ -2522,14 +2578,14 @@ MonoBehaviour:
 
     CEILING'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 068d1e879579b604bba02feff1e15c73, type: 2}
-  m_sharedMaterial: {fileID: -5614386839645136836, guid: 068d1e879579b604bba02feff1e15c73, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4294111477
   m_fontColor: {r: 0.96, g: 0.94, b: 0.95, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -2542,7 +2598,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -2755,7 +2811,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4294110187
   m_fontColor: {r: 0.92, g: 0.92, b: 0.95, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -2768,7 +2824,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -2885,14 +2941,14 @@ MonoBehaviour:
       m_Calls: []
   m_text: 1.0
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: d6da2575449400848b8ca8b0d077a96b, type: 2}
-  m_sharedMaterial: {fileID: -1792871899750977729, guid: d6da2575449400848b8ca8b0d077a96b, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 3873888729
   m_fontColor: {r: 0.85, g: 0.85, b: 0.9, a: 0.9}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -2905,7 +2961,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -3452,6 +3508,15 @@ MonoBehaviour:
   animSpeed: 14
   enableJitter: 1
   jitterIntensity: 0.75
+  enableProgressiveRed: 1
+  timeToMaxRed: 2.5
+  maxRedLimit: 1
+  maxRedBorderColor: {r: 0.95, g: 0.08, b: 0.08, a: 1}
+  maxRedTextColor: {r: 1, g: 0.18, b: 0.18, a: 1}
+  redCooldownSpeed: 3.5
+  pulseAtMaxRed: 1
+  customHoverSfx: {fileID: 0}
+  customClickSfx: {fileID: 0}
   borderImage: {fileID: 5239262649366496370}
   buttonText: {fileID: 1936740892981836116}
 --- !u!1 &7804139481007595154
@@ -3528,7 +3593,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4294110187
   m_fontColor: {r: 0.92, g: 0.92, b: 0.95, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -3541,7 +3606,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -3849,8 +3914,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 5662770941372353269}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -3956,6 +4021,15 @@ MonoBehaviour:
   animSpeed: 14
   enableJitter: 1
   jitterIntensity: 0.75
+  enableProgressiveRed: 1
+  timeToMaxRed: 2.5
+  maxRedLimit: 1
+  maxRedBorderColor: {r: 0.95, g: 0.08, b: 0.08, a: 1}
+  maxRedTextColor: {r: 1, g: 0.18, b: 0.18, a: 1}
+  redCooldownSpeed: 3.5
+  pulseAtMaxRed: 1
+  customHoverSfx: {fileID: 0}
+  customClickSfx: {fileID: 0}
   borderImage: {fileID: 5975991830770406360}
   buttonText: {fileID: 0}
 --- !u!1 &8202795095598398388
@@ -4237,6 +4311,15 @@ MonoBehaviour:
   animSpeed: 14
   enableJitter: 1
   jitterIntensity: 0.75
+  enableProgressiveRed: 1
+  timeToMaxRed: 2.5
+  maxRedLimit: 1
+  maxRedBorderColor: {r: 0.95, g: 0.08, b: 0.08, a: 1}
+  maxRedTextColor: {r: 1, g: 0.18, b: 0.18, a: 1}
+  redCooldownSpeed: 3.5
+  pulseAtMaxRed: 1
+  customHoverSfx: {fileID: 0}
+  customClickSfx: {fileID: 0}
   borderImage: {fileID: 2516853276121848026}
   buttonText: {fileID: 807160992105884766}
 --- !u!1 &8549947502147541044
@@ -4492,8 +4575,8 @@ RectTransform:
   - {fileID: 742229226634539404}
   m_Father: {fileID: 6226249372045317271}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 380, y: 54}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -4599,6 +4682,15 @@ MonoBehaviour:
   animSpeed: 14
   enableJitter: 1
   jitterIntensity: 0.75
+  enableProgressiveRed: 1
+  timeToMaxRed: 2.5
+  maxRedLimit: 1
+  maxRedBorderColor: {r: 0.95, g: 0.08, b: 0.08, a: 1}
+  maxRedTextColor: {r: 1, g: 0.18, b: 0.18, a: 1}
+  redCooldownSpeed: 3.5
+  pulseAtMaxRed: 1
+  customHoverSfx: {fileID: 0}
+  customClickSfx: {fileID: 0}
   borderImage: {fileID: 6036110189126082446}
   buttonText: {fileID: 219649792883695918}
 --- !u!1 &8981466066485101726

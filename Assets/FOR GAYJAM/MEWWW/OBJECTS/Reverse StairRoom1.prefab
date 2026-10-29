@@ -217,7 +217,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -1.0107571, y: 0}
+  m_Offset: {x: -0.58960843, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -227,7 +227,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 2.0584857, y: 10.8}
+  m_Size: {x: 2.900783, y: 10.8}
   m_EdgeRadius: 0
 --- !u!1 &664829834699854204
 GameObject:
@@ -571,7 +571,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 1.3950996, y: -1.5412197, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 1131558019215831539}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2611,7 +2611,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 14.04, y: -1.8099997, z: 0}
-  m_LocalScale: {x: 0.6, y: 0.6, z: 0.6}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 1639139493520171388}
@@ -8576,7 +8576,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: 67
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
+  m_fontAsset: {fileID: 0}
   m_sharedMaterial: {fileID: 2140032, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -8685,9 +8685,9 @@ Transform:
   m_GameObject: {fileID: 4698415194394623841}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.4151001, y: 1.6387806, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 1.4151001, y: 1.37, z: 0}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4047386908720591415}
   m_Father: {fileID: 1131558019215831539}
@@ -16852,8 +16852,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 67
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
-  m_sharedMaterial: {fileID: 2140032, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -17226,6 +17226,34 @@ PrefabInstance:
     - target: {fileID: 5654918215664501710, guid: bebe703d1b4554c4cbad22355757ffd5, type: 3}
       propertyPath: m_SortingOrder
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6493214528757920981, guid: bebe703d1b4554c4cbad22355757ffd5, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6493214528757920981, guid: bebe703d1b4554c4cbad22355757ffd5, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6493214528757920981, guid: bebe703d1b4554c4cbad22355757ffd5, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6493214528757920981, guid: bebe703d1b4554c4cbad22355757ffd5, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7576982800624077822, guid: bebe703d1b4554c4cbad22355757ffd5, type: 3}
+      propertyPath: m_Color.b
+      value: 0.59748423
+      objectReference: {fileID: 0}
+    - target: {fileID: 7576982800624077822, guid: bebe703d1b4554c4cbad22355757ffd5, type: 3}
+      propertyPath: m_Color.g
+      value: 0.59748423
+      objectReference: {fileID: 0}
+    - target: {fileID: 7576982800624077822, guid: bebe703d1b4554c4cbad22355757ffd5, type: 3}
+      propertyPath: m_Color.r
+      value: 0.59748423
       objectReference: {fileID: 0}
     - target: {fileID: 7601628479252114360, guid: bebe703d1b4554c4cbad22355757ffd5, type: 3}
       propertyPath: m_Name

@@ -31022,8 +31022,8 @@ Transform:
   m_GameObject: {fileID: 5591337285388431002}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2.77, y: -4.47, z: 0}
-  m_LocalScale: {x: 0.75, y: 0.75, z: 0.75}
+  m_LocalPosition: {x: 2.43, y: -4.47, z: 0}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 1639139493520171388}
@@ -37378,6 +37378,7 @@ MonoBehaviour:
   - {fileID: 8970193399305901053, guid: 8065f7a8da05b6847a70955bb04034d9, type: 3}
   - {fileID: 6267208673490482152, guid: 5c373c5d4174bce40865f3e143dc0c99, type: 3}
   spawnPoint: {fileID: 732069263116182602}
+  spawnDelay: 0.1
   Spawnable: 0
   spawnChancePercentage: 33
   minRooms: 2
@@ -37387,6 +37388,8 @@ MonoBehaviour:
   SummonOnce: 0
   preventBlindedEntityOnStairRoom: 1
   delaySpawnIfBlockedByStair: 0
+  firstEntityDisappearTimelinePrefab: {fileID: 0}
+  firstEntityTimelineSpawnPoint: {fileID: 0}
 --- !u!1 &8627004188119818933
 GameObject:
   m_ObjectHideFlags: 0
