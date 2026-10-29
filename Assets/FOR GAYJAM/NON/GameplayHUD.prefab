@@ -107,8 +107,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 6499489802775188874}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 500, y: 48}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -162,7 +162,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: -1183493901
+  m_TextStyleHashCode: 0
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -244,8 +244,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 6499489802775188874}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 44, y: 42}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -350,7 +350,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 25
+  m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 100
@@ -412,8 +412,6 @@ MonoBehaviour:
   ghostWarningManager: {fileID: 6350924482651515094}
   staminaBarUI: {fileID: 4671186803762229955}
   horrorWarningSignUI: {fileID: 7309390023025104266}
-  sniffGhostHUD: {fileID: 0}
-  pauseMenuController: {fileID: 0}
 --- !u!114 &6350924482651515094
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -506,32 +504,17 @@ MonoBehaviour:
   canvasGroup: {fileID: 8637907770199535500}
   fillImage: {fileID: 8133927429008418336}
   backgroundImage: {fileID: 9128268543841269063}
-  ghostFillImage: {fileID: 0}
   barContainer: {fileID: 8701742763272568431}
   barWidth: 420
   barHeight: 8
   bottomOffset: 0
   backgroundColor: {r: 0, g: 0, b: 0, a: 0.45}
   fillColor: {r: 1, g: 1, b: 1, a: 1}
-  exhaustedColor: {r: 1, g: 0.25, b: 0.25, a: 1}
-  ghostColor: {r: 1, g: 1, b: 1, a: 0.35}
   stretchFullScreenWidth: 0
-  smoothFill: 1
-  fillSmoothSpeed: 15
-  enableGhostTrail: 1
-  ghostCatchupSpeed: 2.5
-  alwaysShow: 0
-  showWhileRegenerating: 0
   fadeInSpeed: 8
   fadeOutSpeed: 1.8
   fadeOutDelay: 0.35
-  fullStaminaFadeDelay: 0.8
-  currentStatus: 0
-  currentStamina: 100
-  maxStamina: 100
-  fillRatio: 1
-  isDraining: 0
-  isRegenerating: 0
+  showWhileRegenerating: 0
 --- !u!225 &8637907770199535500
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -688,7 +671,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: -50}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 650, y: 60}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &7309390023025104266
 MonoBehaviour:
@@ -1126,7 +1109,7 @@ MonoBehaviour:
   m_text: 1
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 07a112b980fad65449b67b43ffa80fab, type: 2}
-  m_sharedMaterial: {fileID: 6851601448697946754, guid: 07a112b980fad65449b67b43ffa80fab, type: 2}
+  m_sharedMaterial: {fileID: 0}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1145,7 +1128,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: -1183493901
+  m_TextStyleHashCode: 0
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
