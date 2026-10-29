@@ -150,7 +150,19 @@ namespace HorrorJam.UI.Editor
             warningSignUI.EnsureComponents();
             hudManager.horrorWarningSignUI = warningSignUI;
 
-            // 7. Save as Prefab to all game HUD prefab paths
+            // 7. Sniff Ghost HUD (SecondEventGhost / Fat Rat / Lockers)
+            GameObject sniffGhostGo = new GameObject("SniffGhost_HUD", typeof(RectTransform));
+            sniffGhostGo.transform.SetParent(rootGo.transform, false);
+            RectTransform sniffRect = sniffGhostGo.GetComponent<RectTransform>();
+            StretchFull(sniffRect);
+            SniffGhostHUD sniffHUD = sniffGhostGo.AddComponent<SniffGhostHUD>();
+            sniffHUD.BuildUIHierarchyIfNeeded();
+            hudManager.sniffGhostHUD = sniffHUD;
+
+            // 8. Pause Menu System (ESC Pause Menu matching Main Menu button style)
+            BuildPauseMenu(rootGo, hudManager);
+
+            // 8. Save as Prefab to all game HUD prefab paths
             PrefabUtility.SaveAsPrefabAssetAndConnect(rootGo, PREFAB_PATH, InteractionMode.AutomatedAction);
             Debug.Log($"[GameplayHUDBuilder] Saved Prefab successfully to {PREFAB_PATH}!");
 
@@ -171,6 +183,167 @@ namespace HorrorJam.UI.Editor
             Undo.RegisterCreatedObjectUndo(rootGo, "Create Gameplay HUD");
             Selection.activeGameObject = rootGo;
             return rootGo;
+        }
+
+        private static void BuildPauseMenu(GameObject rootGo, GameplayHUDManager hudManager)
+        {
+            Sprite btnFrameSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/FOR GAYJAM/NON/MainMenuUI/Sprites/Button_Frame_9Slice.png");
+            Sprite vignetteSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/FOR GAYJAM/NON/MainMenuUI/Sprites/Vignette_Oval.png");
+            AudioClip hoverClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/NON/Audio/UI_Hover.wav");
+            AudioClip clickClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/FOR GAYJAM/NON/Audio/UI_Click.wav");
+
+            TMP_FontAsset titleFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/FOR GAYJAM/NON/Fonts/Remnant-Regular SDF.asset");
+            TMP_FontAsset buttonFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/FOR GAYJAM/NON/Fonts/PixelatedEleganceRegular SDF.asset");
+            if (buttonFont == null) buttonFont = LoadHorrorFont();
+            if (titleFont == null) titleFont = buttonFont;
+
+            GameObject pauseRoot = new GameObject("Pause_Menu_Root", typeof(RectTransform));
+            pauseRoot.transform.SetParent(rootGo.transform, false);
+
+            RectTransform rootRect = pauseRoot.GetComponent<RectTransform>();
+            StretchFull(rootRect);
+
+            PauseMenuController pauseCtrl = pauseRoot.AddComponent<PauseMenuController>();
+            AudioSource audioSource = pauseRoot.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.ignoreListenerPause = true;
+            pauseCtrl.audioSource = audioSource;
+            pauseCtrl.hoverSfx = hoverClip;
+            pauseCtrl.clickSfx = clickClip;
+            pauseCtrl.mainMenuSceneName = "Menu GayJam";
+
+            // Container overlay for pause visuals
+            GameObject pausePanel = new GameObject("Pause_Panel_Overlay", typeof(RectTransform));
+            pausePanel.transform.SetParent(pauseRoot.transform, false);
+            StretchFull(pausePanel.GetComponent<RectTransform>());
+
+            // 1. Dark Backdrop (Blocks raycasts to underlying gameplay)
+            GameObject backdrop = new GameObject("Dark_Backdrop", typeof(RectTransform));
+            backdrop.transform.SetParent(pausePanel.transform, false);
+            StretchFull(backdrop.GetComponent<RectTransform>());
+            Image bgImg = backdrop.AddComponent<Image>();
+            bgImg.color = new Color(0.04f, 0.03f, 0.05f, 0.88f);
+            bgImg.raycastTarget = true;
+
+            // 2. Vignette Overlay
+            GameObject vigObj = new GameObject("Vignette_Overlay", typeof(RectTransform));
+            vigObj.transform.SetParent(pausePanel.transform, false);
+            StretchFull(vigObj.GetComponent<RectTransform>());
+            Image vigImg = vigObj.AddComponent<Image>();
+            if (vignetteSprite != null) vigImg.sprite = vignetteSprite;
+            vigImg.color = new Color(0f, 0f, 0f, 0.92f);
+            vigImg.raycastTarget = false;
+
+            // 3. Pause Title Text
+            GameObject titleObj = new GameObject("Pause_Title", typeof(RectTransform));
+            titleObj.transform.SetParent(pausePanel.transform, false);
+            RectTransform titleRect = titleObj.GetComponent<RectTransform>();
+            titleRect.anchorMin = new Vector2(0.5f, 0.5f);
+            titleRect.anchorMax = new Vector2(0.5f, 0.5f);
+            titleRect.pivot = new Vector2(0.5f, 0.5f);
+            titleRect.anchoredPosition = new Vector2(0f, 130f);
+            titleRect.sizeDelta = new Vector2(600f, 100f);
+
+            TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
+            titleTMP.font = titleFont;
+            titleTMP.text = "PAUSED";
+            titleTMP.fontSize = 62f;
+            titleTMP.alignment = TextAlignmentOptions.Center;
+            titleTMP.color = new Color(0.96f, 0.94f, 0.95f, 1f);
+
+            // 4. Buttons Container
+            GameObject btnsContainer = new GameObject("Buttons_Container", typeof(RectTransform));
+            btnsContainer.transform.SetParent(pausePanel.transform, false);
+            RectTransform btnsRect = btnsContainer.GetComponent<RectTransform>();
+            btnsRect.anchorMin = new Vector2(0.5f, 0.5f);
+            btnsRect.anchorMax = new Vector2(0.5f, 0.5f);
+            btnsRect.pivot = new Vector2(0.5f, 0.5f);
+            btnsRect.anchoredPosition = new Vector2(0f, -30f);
+            btnsRect.sizeDelta = new Vector2(360f, 180f);
+
+            VerticalLayoutGroup vLayout = btnsContainer.AddComponent<VerticalLayoutGroup>();
+            vLayout.spacing = 18f;
+            vLayout.childAlignment = TextAnchor.MiddleCenter;
+            vLayout.childControlWidth = false;
+            vLayout.childControlHeight = false;
+            vLayout.childForceExpandWidth = false;
+            vLayout.childForceExpandHeight = false;
+
+            // Resume Button
+            Button btnResume = CreateMenuButton("Button_Resume", "Resume", new Vector2(260f, 54f), btnsContainer.transform, btnFrameSprite, buttonFont, 26f);
+            // Main Menu Button
+            Button btnMainMenu = CreateMenuButton("Button_MainMenu", "Main Menu", new Vector2(260f, 54f), btnsContainer.transform, btnFrameSprite, buttonFont, 26f);
+
+            pauseCtrl.btnResume = btnResume;
+            pauseCtrl.btnMainMenu = btnMainMenu;
+            pauseCtrl.pausePanel = pausePanel;
+
+            // 5. Screen Fader (Direct child of pauseRoot)
+            GameObject faderObj = new GameObject("Screen_Fader", typeof(RectTransform));
+            faderObj.transform.SetParent(pauseRoot.transform, false);
+            StretchFull(faderObj.GetComponent<RectTransform>());
+            CanvasGroup faderGroup = faderObj.AddComponent<CanvasGroup>();
+            faderGroup.alpha = 0f;
+            faderGroup.blocksRaycasts = false;
+            Image faderImg = faderObj.AddComponent<Image>();
+            faderImg.color = Color.black;
+            faderImg.raycastTarget = false;
+            pauseCtrl.screenFader = faderGroup;
+
+            hudManager.pauseMenuController = pauseCtrl;
+
+            // Overlay starts inactive, but pauseRoot controller stays active to listen for ESC
+            pausePanel.SetActive(false);
+            pauseRoot.SetActive(true);
+        }
+
+        private static Button CreateMenuButton(string name, string text, Vector2 size, Transform parent, Sprite frameSprite, TMP_FontAsset font, float fontSize)
+        {
+            GameObject btnObj = new GameObject(name, typeof(RectTransform));
+            btnObj.transform.SetParent(parent, false);
+            RectTransform rect = btnObj.GetComponent<RectTransform>();
+            rect.sizeDelta = size;
+
+            Image img = btnObj.AddComponent<Image>();
+            if (frameSprite != null)
+            {
+                img.sprite = frameSprite;
+                img.type = Image.Type.Sliced;
+            }
+            img.color = new Color(0.9f, 0.9f, 0.92f, 0.85f);
+
+            Button btn = btnObj.AddComponent<Button>();
+            btn.targetGraphic = img;
+
+            GameObject txtObj = new GameObject("Text", typeof(RectTransform));
+            txtObj.transform.SetParent(btnObj.transform, false);
+            StretchFull(txtObj.GetComponent<RectTransform>());
+
+            TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+            tmp.font = font;
+            if (font != null && font.material != null)
+            {
+                tmp.fontSharedMaterial = font.material;
+            }
+            tmp.text = text;
+            tmp.fontSize = fontSize;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = new Color(0.92f, 0.92f, 0.95f, 1f);
+
+            MenuButtonEffects fx = btnObj.AddComponent<MenuButtonEffects>();
+            fx.borderImage = img;
+            fx.buttonText = tmp;
+
+            return btn;
+        }
+
+        private static void StretchFull(RectTransform rect)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.sizeDelta = Vector2.zero;
+            rect.anchoredPosition = Vector2.zero;
+            rect.pivot = new Vector2(0.5f, 0.5f);
         }
 
         private static TMP_FontAsset LoadHorrorFont()

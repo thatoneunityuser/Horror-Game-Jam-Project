@@ -58,6 +58,7 @@ namespace HorrorJam.UI
         private bool isHovered = false;
         private bool isPressed = false;
         private MainMenuController controller;
+        private PauseMenuController pauseController;
         private Button uiButton;
         private float hoverTimer = 0f;
 
@@ -75,6 +76,10 @@ namespace HorrorJam.UI
             controller = GetComponentInParent<MainMenuController>();
             if (controller == null)
                 controller = Object.FindFirstObjectByType<MainMenuController>();
+
+            pauseController = GetComponentInParent<PauseMenuController>();
+            if (pauseController == null)
+                pauseController = Object.FindFirstObjectByType<PauseMenuController>();
 
             uiButton = GetComponent<Button>();
             if (uiButton != null)
@@ -230,25 +235,35 @@ namespace HorrorJam.UI
 
         public void PlayHoverSound()
         {
-            if (customHoverSfx != null && controller != null && controller.audioSource != null)
+            if (customHoverSfx != null)
             {
-                controller.audioSource.PlayOneShot(customHoverSfx, 0.6f);
+                AudioSource src = (controller != null) ? controller.audioSource : (pauseController != null ? pauseController.audioSource : null);
+                if (src != null) src.PlayOneShot(customHoverSfx, 0.6f);
             }
             else if (controller != null)
             {
                 controller.PlayHoverSfx();
             }
+            else if (pauseController != null)
+            {
+                pauseController.PlayHoverSfx();
+            }
         }
 
         public void PlayClickSound()
         {
-            if (customClickSfx != null && controller != null && controller.audioSource != null)
+            if (customClickSfx != null)
             {
-                controller.audioSource.PlayOneShot(customClickSfx, 0.85f);
+                AudioSource src = (controller != null) ? controller.audioSource : (pauseController != null ? pauseController.audioSource : null);
+                if (src != null) src.PlayOneShot(customClickSfx, 0.85f);
             }
             else if (controller != null)
             {
                 controller.PlayClickSfx();
+            }
+            else if (pauseController != null)
+            {
+                pauseController.PlayClickSfx();
             }
         }
 

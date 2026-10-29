@@ -394,7 +394,7 @@ public class RoomCounter : MonoBehaviour
         return PassedRoomCount >= event2StartRoom && PassedRoomCount <= event2EndRoom;
     }
 
-    private GameObject GetRoomContainingPlayer()
+    public GameObject GetRoomContainingPlayer()
     {
         Locker[] lockers = FindObjectsOfType<Locker>();
         if (lockers != null)

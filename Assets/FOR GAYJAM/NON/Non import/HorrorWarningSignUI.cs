@@ -19,7 +19,19 @@ using TMPro;
 [DisallowMultipleComponent]
 public class HorrorWarningSignUI : MonoBehaviour
 {
-    public static HorrorWarningSignUI Instance { get; private set; }
+    private static HorrorWarningSignUI _instance;
+    public static HorrorWarningSignUI Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = FindObjectOfType<HorrorWarningSignUI>();
+            }
+            return _instance;
+        }
+        private set { _instance = value; }
+    }
 
     public enum WarningLevel
     {
@@ -46,15 +58,15 @@ public class HorrorWarningSignUI : MonoBehaviour
     public Sprite iconYellow;
     public Sprite iconRed;
 
-    [Header("=== Warning Configurations (ข้อความตัวหนังสือสีขาว) ===")]
-    [Tooltip("ข้อความระดับสีขาว (เตือนให้อยู่ใต้แสงสว่าง)")]
-    public string whiteLightMessage = "รีบไปอยู่ใต้แสงสว่าง!";
+    [Header("=== Warning Configurations (English Warning Signs) ===")]
+    [Tooltip("White warning message (Get under the light)")]
+    public string whiteLightMessage = "GET UNDER THE LIGHT NOW!";
 
-    [Tooltip("ข้อความระดับสีเหลือง (ตัวตาบอดสงสัยว่าเราขยับ)")]
-    public string yellowSuspectMessage = "ตัวตาบอดกำลังสงสัยว่าเราขยับ... หยุดนิ่ง!";
+    [Tooltip("Yellow warning message (Blind entity suspects movement)")]
+    public string yellowSuspectMessage = "IT SUSPECTS MOVEMENT... STAY STILL!";
 
-    [Tooltip("ข้อความระดับสีแดง (ไอตาบอดรู้ว่าเราอยู่ไหน)")]
-    public string redDetectedMessage = "ไอตาบอดรู้ตำแหน่งของเราแล้ว! หนีเร็ว!";
+    [Tooltip("Red warning message (Blind entity detected player)")]
+    public string redDetectedMessage = "DETECTED! RUN FOR YOUR LIFE!";
 
     [Header("=== Animation & Audio ===")]
     public float fadeInSpeed = 10f;
@@ -236,9 +248,8 @@ public class HorrorWarningSignUI : MonoBehaviour
 
         if (warningText != null)
         {
-            string adjusted = ThaiFontFixer.Adjust(message);
-            warningText.text = adjusted;
-            warningText.color = Color.white; // ตัวหนังสือสีขาวตามที่ขอ
+            warningText.text = message;
+            warningText.color = Color.white; // Pure white text
         }
 
         if (audioSource != null && clipToPlay != null)
@@ -404,19 +415,19 @@ public class HorrorWarningSignUI : MonoBehaviour
 
         if (thaiFontAsset == null)
         {
-            thaiFontAsset = LoadThaiFont();
+            thaiFontAsset = LoadWarningFont();
         }
 
         RectTransform textRt = warningText.GetComponent<RectTransform>();
         textRt.sizeDelta = new Vector2(500f, 48f);
-        warningText.text = "ป้ายแจ้งเตือน";
+        warningText.text = "WARNING";
         warningText.fontSize = 26f;
         warningText.fontStyle = FontStyles.Bold;
         warningText.alignment = TextAlignmentOptions.MidlineLeft;
-        warningText.color = Color.white; // สีขาวล้วน
+        warningText.color = Color.white; // Pure white
         warningText.raycastTarget = false;
         warningText.outlineWidth = 0.2f;
-        warningText.outlineColor = new Color32(0, 0, 0, 220); // ขอบดำบางๆ ชัดเจนทุกสภาพแสง
+        warningText.outlineColor = new Color32(0, 0, 0, 220);
         if (thaiFontAsset != null) warningText.font = thaiFontAsset;
 
         if (iconImage != null) iconImage.transform.SetSiblingIndex(0);
@@ -431,14 +442,15 @@ public class HorrorWarningSignUI : MonoBehaviour
         }
     }
 
-    private TMP_FontAsset LoadThaiFont()
+    private TMP_FontAsset LoadWarningFont()
     {
 #if UNITY_EDITOR
         string[] candidates = new string[]
         {
-            "Assets/NOT FOR GAYJAM/TH Sarabun New Regular/RSU_BOLD SDF.asset",
-            "Assets/NOT FOR GAYJAM/TH Sarabun New Regular/NotoSansThai-VariableFont_wght SDF.asset",
-            "Assets/FOR GAYJAM/NON/Font non/XTypewriter-Bold SDF.asset"
+            "Assets/FOR GAYJAM/NON/Font non/XTypewriter-Bold SDF.asset",
+            "Assets/FOR GAYJAM/NON/Font non/Coolvetica Rg SDF.asset",
+            "Assets/FOR GAYJAM/NON/Fonts/PixelatedEleganceRegular SDF.asset",
+            "Assets/NOT FOR GAYJAM/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset"
         };
 
         foreach (string path in candidates)

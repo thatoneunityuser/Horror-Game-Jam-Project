@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class SecondEventGhost : MonoBehaviour
 {
+    public static SecondEventGhost Instance => ActiveGhosts.Count > 0 ? ActiveGhosts.First() : null;
     public static readonly HashSet<SecondEventGhost> ActiveGhosts = new HashSet<SecondEventGhost>();
 
     public enum GHOST_STATE
@@ -105,6 +106,52 @@ public class SecondEventGhost : MonoBehaviour
     public List<GameObject> lockerToSniff = new List<GameObject>();
     [Tooltip("The specific pre-chosen locker currently being walked to / sniffed in Step 4")]
     public GameObject currentLockerTarget;
+
+    public GameObject CurrentLockerTarget => currentLockerTarget;
+    public bool IsChasingPlayer => ghost_State == GHOST_STATE.CHASE;
+    public int GhostRoomNumber
+    {
+        get
+        {
+            if (RoomCounter.instance != null)
+            {
+                if (currentAssignedRoom != null)
+                {
+                    int rNum = RoomCounter.instance.GetRoomNumber(currentAssignedRoom);
+                    if (rNum > 0) return rNum;
+                }
+                GameObject phys = GetPhysicalRoomAtPosition(transform.position);
+                if (phys != null)
+                {
+                    int rNum = RoomCounter.instance.GetRoomNumber(phys);
+                    if (rNum > 0) return rNum;
+                }
+            }
+            if (currentAssignedRoom != null)
+            {
+                string n = currentAssignedRoom.name;
+                int idx = n.LastIndexOf(" ");
+                if (idx >= 0 && int.TryParse(n.Substring(idx + 1).Replace("(Clone)", "").Trim(), out int parsed)) return parsed;
+            }
+            return -1;
+        }
+    }
+    public int PlayerRoomNumber => RoomCounter.instance != null ? RoomCounter.instance.PassedRoomCount : 0;
+    public bool IsGhostInPlayerRoom
+    {
+        get
+        {
+            if (isKillingPlayer || ghost_State == GHOST_STATE.IDLE) return false;
+            if (RoomCounter.instance != null)
+            {
+                GameObject playerRoom = RoomCounter.instance.GetRoomContainingPlayer();
+                GameObject ghostPhysRoom = GetPhysicalRoomAtPosition(transform.position);
+                if (ghostPhysRoom != null && playerRoom != null && ghostPhysRoom == playerRoom) return true;
+                if (currentAssignedRoom != null && playerRoom != null && currentAssignedRoom == playerRoom) return true;
+            }
+            return GhostRoomNumber > 0 && GhostRoomNumber == PlayerRoomNumber;
+        }
+    }
 
     [Header("Room Tracking (Event Rooms 45 - 48)")]
     [Tooltip("The room GameObject the ghost is currently assigned to patrol")]

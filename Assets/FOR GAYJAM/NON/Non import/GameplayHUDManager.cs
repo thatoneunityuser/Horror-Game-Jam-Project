@@ -15,6 +15,10 @@ public class GameplayHUDManager : MonoBehaviour
     public GhostWarningManager ghostWarningManager;
     public StaminaBarUI staminaBarUI;
     public HorrorWarningSignUI horrorWarningSignUI;
+    public SniffGhostHUD sniffGhostHUD;
+
+    [Header("=== Pause Menu ===")]
+    public HorrorJam.UI.PauseMenuController pauseMenuController;
 
     void Awake()
     {
@@ -36,6 +40,26 @@ public class GameplayHUDManager : MonoBehaviour
         if (staminaBarUI == null) staminaBarUI = FindObjectOfType<StaminaBarUI>();
         if (horrorWarningSignUI == null) horrorWarningSignUI = GetComponentInChildren<HorrorWarningSignUI>();
         if (horrorWarningSignUI == null) horrorWarningSignUI = FindObjectOfType<HorrorWarningSignUI>();
+        if (sniffGhostHUD == null) sniffGhostHUD = GetComponentInChildren<SniffGhostHUD>();
+        if (sniffGhostHUD == null) sniffGhostHUD = FindObjectOfType<SniffGhostHUD>();
+        if (pauseMenuController == null) pauseMenuController = GetComponentInChildren<HorrorJam.UI.PauseMenuController>();
+        if (pauseMenuController == null) pauseMenuController = FindObjectOfType<HorrorJam.UI.PauseMenuController>();
+    }
+
+    void Update()
+    {
+        if (HorrorJam.UI.PauseMenuController.WasEscapePressed())
+        {
+            TogglePauseMenu();
+        }
+    }
+
+    public static void TogglePauseMenu()
+    {
+        if (HorrorJam.UI.PauseMenuController.Instance != null)
+        {
+            HorrorJam.UI.PauseMenuController.Instance.TogglePause();
+        }
     }
 
     #region Static Helper Methods (เข้าถึงง่ายจากทุกที่)
